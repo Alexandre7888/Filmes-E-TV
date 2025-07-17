@@ -3,15 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Assistir Conteúdo</title>
-</head>
-<body>
-  <h2>Filmes, Séries e TV</h2>
-  <div id="conteudo"></div>
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, child, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-
-  <script>
+    // Configuração Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
       authDomain: "api7-5cde7.firebaseapp.com",
@@ -19,48 +16,62 @@
       projectId: "api7-5cde7",
       storageBucket: "api7-5cde7.appspot.com",
       messagingSenderId: "113015470459",
-      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de",
+      measurementId: "G-DKEHN0SJV7"
     };
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
+    // Obter token da URL
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
 
-    function verificarToken(callback) {
-      firebase.database().ref("tokens/" + token).get().then(snapshot => {
+    const contentDiv = document.getElementById("conteudo");
+
+    if (!token) {
+      contentDiv.innerHTML = "<h2 style='color:red;'>❌ Token não encontrado na URL.</h2>";
+    } else {
+      const tokenRef = ref(db, "tokens/" + token);
+      get(tokenRef).then(snapshot => {
         if (snapshot.exists()) {
-          callback(true);
+          // Token válido — buscar conteúdos
+          const filmesRef = ref(db, "conteudos/");
+          get(filmesRef).then(contentSnap => {
+            if (contentSnap.exists()) {
+              const dados = contentSnap.val();
+              for (let id in dados) {
+                const item = dados[id];
+                const card = document.createElement("div");
+                card.style.border = "1px solid #ccc";
+                card.style.padding = "10px";
+                card.style.margin = "10px 0";
+                card.innerHTML = `
+                  <h3>${item.titulo}</h3>
+                  <p>Categoria: ${item.categoria}</p>
+                  <iframe width="100%" height="360" src="${item.link}" frameborder="0" allowfullscreen></iframe>
+                `;
+                contentDiv.appendChild(card);
+              }
+            } else {
+              contentDiv.innerHTML = "<h2 style='color:orange;'>Nenhum conteúdo encontrado.</h2>";
+            }
+          });
         } else {
-          document.body.innerHTML = "<h2>Token inválido</h2>";
+          // Token inválido
+          contentDiv.innerHTML = "<h2 style='color:red;'>❌ Token inválido. Acesso negado.</h2>";
         }
+      }).catch(error => {
+        contentDiv.innerHTML = `<h2 style='color:red;'>Erro ao verificar token: ${error}</h2>`;
       });
     }
-
-    function carregarConteudo(tipo) {
-      firebase.database().ref(tipo).once("value", snapshot => {
-        const dados = snapshot.val();
-        for (let id in dados) {
-          const item = dados[id];
-          const div = document.createElement("div");
-          div.innerHTML = `
-            <h3>${item.titulo}</h3>
-            <video width="300" controls>
-              <source src="${item.link}" type="application/x-mpegURL">
-              Seu navegador não suporta vídeo.
-            </video><br><br>
-          `;
-          document.getElementById("conteudo").appendChild(div);
-        }
-      });
-    }
-
-    verificarToken(() => {
-      carregarConteudo("filmes");
-      carregarConteudo("series");
-      carregarConteudo("tv");
-    });
   </script>
+</head>
+<body>
+  <h1>🎬 Filmes, Séries e TV</h1>
+  <div id="conteudo">
+    <p>Carregando conteúdo...</p>
+  </div>
 </body>
 </html>
