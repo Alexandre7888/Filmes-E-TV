@@ -3,12 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Assistir Conteúdo</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
+    h2 { margin-top: 40px; }
+  </style>
   <script type="module">
-    // Import Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, child, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // Configuração Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
       authDomain: "api7-5cde7.firebaseapp.com",
@@ -20,11 +23,9 @@
       measurementId: "G-DKEHN0SJV7"
     };
 
-    // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Obter token da URL
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
 
@@ -36,42 +37,48 @@
       const tokenRef = ref(db, "tokens/" + token);
       get(tokenRef).then(snapshot => {
         if (snapshot.exists()) {
-          // Token válido — buscar conteúdos
-          const filmesRef = ref(db, "conteudos/");
-          get(filmesRef).then(contentSnap => {
-            if (contentSnap.exists()) {
-              const dados = contentSnap.val();
-              for (let id in dados) {
-                const item = dados[id];
-                const card = document.createElement("div");
-                card.style.border = "1px solid #ccc";
-                card.style.padding = "10px";
-                card.style.margin = "10px 0";
-                card.innerHTML = `
-                  <h3>${item.titulo}</h3>
-                  <p>Categoria: ${item.categoria}</p>
-                  <iframe width="100%" height="360" src="${item.link}" frameborder="0" allowfullscreen></iframe>
-                `;
-                contentDiv.appendChild(card);
-              }
-            } else {
-              contentDiv.innerHTML = "<h2 style='color:orange;'>Nenhum conteúdo encontrado.</h2>";
-            }
-          });
+          // Token válido — carregar categorias
+          carregarCategoria("filmes", "🎬 Filmes");
+          carregarCategoria("series", "📺 Séries");
+          carregarCategoria("tv", "📡 TV Ao Vivo");
         } else {
-          // Token inválido
           contentDiv.innerHTML = "<h2 style='color:red;'>❌ Token inválido. Acesso negado.</h2>";
         }
       }).catch(error => {
         contentDiv.innerHTML = `<h2 style='color:red;'>Erro ao verificar token: ${error}</h2>`;
       });
     }
+
+    function carregarCategoria(caminho, titulo) {
+      const categoriaRef = ref(db, caminho);
+      get(categoriaRef).then(snapshot => {
+        if (snapshot.exists()) {
+          const dados = snapshot.val();
+          const secao = document.createElement("div");
+          secao.innerHTML = `<h2>${titulo}</h2>`;
+          for (let id in dados) {
+            const item = dados[id];
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <h3>${item.titulo}</h3>
+              <iframe width="100%" height="360" src="${item.link}" frameborder="0" allowfullscreen></iframe>
+            `;
+            secao.appendChild(card);
+          }
+          contentDiv.appendChild(secao);
+        } else {
+          const aviso = document.createElement("p");
+          aviso.style.color = "orange";
+          aviso.textContent = `⚠️ Nenhum conteúdo encontrado em: ${titulo}`;
+          contentDiv.appendChild(aviso);
+        }
+      });
+    }
   </script>
 </head>
 <body>
-  <h1>🎬 Filmes, Séries e TV</h1>
-  <div id="conteudo">
-    <p>Carregando conteúdo...</p>
-  </div>
+  <h1>🎞️ Catálogo de Filmes, Séries e TV</h1>
+  <div id="conteudo"><p>Carregando...</p></div>
 </body>
 </html>

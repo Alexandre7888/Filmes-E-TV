@@ -3,32 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <title>Adicionar Conteúdo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label, input, select, button { font-size: 16px; margin: 10px 0; display: block; }
+    #mensagem { margin: 10px 0; color: red; }
+    #preview { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+  </style>
 </head>
 <body>
   <h2>Adicionar Filme, Série ou TV</h2>
-
+  <div id="mensagem"></div>
   <form id="conteudoForm">
-    <label>Título:</label><br>
-    <input type="text" id="titulo" required><br><br>
+    <label for="titulo">Título:</label>
+    <input type="text" id="titulo" required>
 
-    <label>Tipo:</label><br>
+    <label for="tipo">Tipo:</label>
     <select id="tipo">
       <option value="filmes">Filme</option>
       <option value="series">Série</option>
       <option value="tv">TV</option>
-    </select><br><br>
+    </select>
 
-    <label>Link do Vídeo:</label><br>
-    <input type="text" id="link" required><br><br>
+    <label for="link">Link do vídeo (ou embed):</label>
+    <input type="text" id="link" required>
 
     <button type="submit">Adicionar</button>
   </form>
 
-  <p id="msg"></p>
-  <h3>Preview</h3>
   <div id="preview"></div>
 
-  <!-- Firebase Módulo -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -46,40 +49,46 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    document.getElementById("conteudoForm").addEventListener("submit", async (e) => {
+    const form = document.getElementById("conteudoForm");
+    const mensagemEl = document.getElementById("mensagem");
+    const previewEl = document.getElementById("preview");
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const titulo = document.getElementById("titulo").value;
+      const titulo = document.getElementById("titulo").value.trim();
       const tipo = document.getElementById("tipo").value;
-      const link = document.getElementById("link").value;
+      const link = document.getElementById("link").value.trim();
 
       if (!titulo || !link) {
-        document.getElementById("msg").innerText = "Preencha todos os campos!";
+        mensagemEl.textContent = "Preencha todos os campos!";
         return;
       }
 
-      const refNovo = push(ref(db, tipo));
-      await set(refNovo, {
-        titulo: titulo,
-        link: link
-      });
-
-      document.getElementById("msg").innerText = "Adicionado com sucesso!";
-
-      // Preview incorporado
-      let html = "";
-
-      if (link.endsWith(".m3u8")) {
-        html = `<video controls autoplay width="100%"><source src="${link}" type="application/x-mpegURL"></video>`;
-      } else if (link.includes("iframe") || link.includes("<")) {
-        html = link;
-      } else {
-        html = `<iframe width="100%" height="300" src="${link}" frameborder="0" allowfullscreen></iframe>`;
+      try {
+        const novoRef = push(ref(db, tipo));
+        await set(novoRef, { titulo, link });
+        mensagemEl.style.color = "green";
+        mensagemEl.textContent = "Adicionado com sucesso!";
+        form.reset();
+        mostrarPreview(titulo, link);
+      } catch (error) {
+        mensagemEl.style.color = "red";
+        mensagemEl.textContent = "Erro ao adicionar: " + error.message;
       }
-
-      document.getElementById("preview").innerHTML = `<h4>${titulo}</h4>${html}`;
-      document.getElementById("conteudoForm").reset();
     });
+
+    function mostrarPreview(titulo, link) {
+      let embedHTML = "";
+      if (link.endsWith(".m3u8")) {
+        embedHTML = `<video controls width="100%"><source src="${link}" type="application/x-mpegURL"></video>`;
+      } else if (link.includes("<iframe") || link.includes("<")) {
+        embedHTML = link;
+      } else {
+        embedHTML = `<iframe width="100%" height="300" src="${link}" frameborder="0" allowfullscreen></iframe>`;
+      }
+      previewEl.innerHTML = `<h3>Preview: ${titulo}</h3>${embedHTML}`;
+    }
   </script>
 </body>
 </html>
