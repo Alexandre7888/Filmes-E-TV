@@ -1,25 +1,57 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>Gerar Token</title></head>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerar Token de Acesso</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    button { padding: 10px 15px; margin-top: 10px; }
+    #tokenOutput { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
 <body>
-  <h1>Criar Token de Acesso</h1>
-  <button id="criar">Gerar Token</button>
-  <p id="link"></p>
+  <h2>🔐 Criar Token de Acesso</h2>
+  <button onclick="gerarToken()">Gerar Token</button>
+  <div id="tokenOutput"></div>
 
   <script type="module">
-    import { database } from './firebase-config.js';
-    import { ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    document.getElementById("criar").addEventListener("click", async () => {
-      const token = Math.random().toString(36).substring(2, 10);
-      await push(ref(database, "tokens/"), { token });
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      databaseURL: "https://api7-5cde7-default-rtdb.firebaseio.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de",
+      measurementId: "G-DKEHN0SJV7"
+    };
 
-      document.getElementById("link").innerHTML = `
-        Token gerado: <b>${token}</b><br>
-        Link para adicionar: <a href="adicionar.html?token=${token}">adicionar.html?token=${token}</a><br>
-        Link para ver: <a href="ver.html?token=${token}">ver.html?token=${token}</a>
-      `;
-    });
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    function gerarToken() {
+      const token = "TOKEN-" + Math.random().toString(36).substring(2, 10);
+      const tokensRef = ref(db, 'tokens/' + token);
+      set(tokensRef, {
+        criado_em: new Date().toISOString()
+      }).then(() => {
+        document.getElementById('tokenOutput').innerHTML = `
+          Token gerado: <code>${token}</code><br>
+          <button onclick="copiarToken('${token}')">Copiar</button>
+        `;
+      }).catch((error) => {
+        alert("Erro ao salvar token no Firebase: " + error.message);
+      });
+    }
+
+    window.copiarToken = function(token) {
+      navigator.clipboard.writeText(token).then(() => {
+        alert("Token copiado!");
+      });
+    };
   </script>
 </body>
 </html>
