@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Adicionar Conteúdo</title>
+</head>
+<body>
+  <h2>Adicionar Filme, Série ou TV</h2>
+
+  <form id="conteudoForm">
+    <label>Título:</label><br>
+    <input type="text" id="titulo" required><br><br>
+
+    <label>Tipo:</label><br>
+    <select id="tipo">
+      <option value="filmes">Filme</option>
+      <option value="series">Série</option>
+      <option value="tv">TV</option>
+    </select><br><br>
+
+    <label>Link do Vídeo:</label><br>
+    <input type="text" id="link" required><br><br>
+
+    <button type="submit">Adicionar</button>
+  </form>
+
+  <p id="msg"></p>
+  <h3>Preview</h3>
+  <div id="preview"></div>
+
+  <!-- Firebase Módulo -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      databaseURL: "https://api7-5cde7-default-rtdb.firebaseio.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.getElementById("conteudoForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const titulo = document.getElementById("titulo").value;
+      const tipo = document.getElementById("tipo").value;
+      const link = document.getElementById("link").value;
+
+      if (!titulo || !link) {
+        document.getElementById("msg").innerText = "Preencha todos os campos!";
+        return;
+      }
+
+      const refNovo = push(ref(db, tipo));
+      await set(refNovo, {
+        titulo: titulo,
+        link: link
+      });
+
+      document.getElementById("msg").innerText = "Adicionado com sucesso!";
+
+      // Preview incorporado
+      let html = "";
+
+      if (link.endsWith(".m3u8")) {
+        html = `<video controls autoplay width="100%"><source src="${link}" type="application/x-mpegURL"></video>`;
+      } else if (link.includes("iframe") || link.includes("<")) {
+        html = link;
+      } else {
+        html = `<iframe width="100%" height="300" src="${link}" frameborder="0" allowfullscreen></iframe>`;
+      }
+
+      document.getElementById("preview").innerHTML = `<h4>${titulo}</h4>${html}`;
+      document.getElementById("conteudoForm").reset();
+    });
+  </script>
+</body>
+</html>

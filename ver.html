@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Assistir Conteúdo</title>
+</head>
+<body>
+  <h2>Filmes, Séries e TV</h2>
+  <div id="conteudo"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      databaseURL: "https://api7-5cde7-default-rtdb.firebaseio.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    function verificarToken(callback) {
+      firebase.database().ref("tokens/" + token).get().then(snapshot => {
+        if (snapshot.exists()) {
+          callback(true);
+        } else {
+          document.body.innerHTML = "<h2>Token inválido</h2>";
+        }
+      });
+    }
+
+    function carregarConteudo(tipo) {
+      firebase.database().ref(tipo).once("value", snapshot => {
+        const dados = snapshot.val();
+        for (let id in dados) {
+          const item = dados[id];
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <h3>${item.titulo}</h3>
+            <video width="300" controls>
+              <source src="${item.link}" type="application/x-mpegURL">
+              Seu navegador não suporta vídeo.
+            </video><br><br>
+          `;
+          document.getElementById("conteudo").appendChild(div);
+        }
+      });
+    }
+
+    verificarToken(() => {
+      carregarConteudo("filmes");
+      carregarConteudo("series");
+      carregarConteudo("tv");
+    });
+  </script>
+</body>
+</html>
