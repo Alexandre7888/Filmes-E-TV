@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Gerar Token</title></head>
+<body>
+  <h1>Criar Token de Acesso</h1>
+  <button id="criar">Gerar Token</button>
+  <p id="link"></p>
+
+  <script type="module">
+    import { database } from './firebase-config.js';
+    import { ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    document.getElementById("criar").addEventListener("click", async () => {
+      const token = Math.random().toString(36).substring(2, 10);
+      await push(ref(database, "tokens/"), { token });
+
+      document.getElementById("link").innerHTML = `
+        Token gerado: <b>${token}</b><br>
+        Link para adicionar: <a href="adicionar.html?token=${token}">adicionar.html?token=${token}</a><br>
+        Link para ver: <a href="ver.html?token=${token}">ver.html?token=${token}</a>
+      `;
+    });
+  </script>
+</body>
+</html>
