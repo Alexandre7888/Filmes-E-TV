@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h2>Adicionar Conteúdo no Catálogo Privado</h2>
+  <h2>Adicionar Conteúdo no Catálogo</h2>
   <div id="mensagem"></div>
   <form id="formulario">
     <label for="titulo">Título:</label>
@@ -27,6 +27,13 @@
 
     <label for="link">Link do vídeo (qualquer link):</label>
     <input type="text" id="link" required>
+
+    <label for="visibilidade">Onde exibir?</label>
+    <select id="visibilidade">
+      <option value="privado">Somente no privado</option>
+      <option value="publico">Somente no servidor</option>
+      <option value="ambos">Nos dois (privado e servidor)</option>
+    </select>
 
     <button type="submit">Adicionar</button>
   </form>
@@ -65,20 +72,35 @@
       const titulo = document.getElementById("titulo").value.trim();
       const tipo = document.getElementById("tipo").value;
       const link = document.getElementById("link").value.trim();
+      const visibilidade = document.getElementById("visibilidade").value;
 
       if (!titulo || !link) {
         msg.textContent = "Preencha todos os campos.";
         return;
       }
 
-      const destino = ref(db, `conteudos/${token}/${tipo}`);
-      const novo = push(destino);
-      await set(novo, { titulo, link });
+      msg.style.color = "black";
+      msg.textContent = "⏳ Salvando...";
 
-      msg.style.color = "green";
-      msg.textContent = "✅ Conteúdo adicionado!";
-      mostrarPreview(titulo, link);
-      e.target.reset();
+      try {
+        if (visibilidade === "privado" || visibilidade === "ambos") {
+          const refPrivado = push(ref(db, `conteudos/${token}/${tipo}`));
+          await set(refPrivado, { titulo, link });
+        }
+
+        if (visibilidade === "publico" || visibilidade === "ambos") {
+          const refPublico = push(ref(db, `${tipo}`));
+          await set(refPublico, { titulo, link });
+        }
+
+        msg.style.color = "green";
+        msg.textContent = "✅ Conteúdo adicionado com sucesso!";
+        mostrarPreview(titulo, link);
+        e.target.reset();
+      } catch (erro) {
+        msg.style.color = "red";
+        msg.textContent = "❌ Erro ao adicionar: " + erro.message;
+      }
     });
 
     function mostrarPreview(titulo, link) {
