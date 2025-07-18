@@ -8,6 +8,7 @@
     label, input, select, button { display: block; margin: 10px 0; font-size: 16px; }
     #mensagem { margin: 10px 0; color: red; }
     #preview { margin-top: 20px; background: #f0f0f0; padding: 10px; }
+    .btn-preview { background: #2196F3; color: white; border: none; padding: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -24,7 +25,7 @@
       <option value="tv">TV</option>
     </select>
 
-    <label for="link">Link do vídeo (iframe, m3u8, mp4...):</label>
+    <label for="link">Link do vídeo (qualquer link):</label>
     <input type="text" id="link" required>
 
     <button type="submit">Adicionar</button>
@@ -81,15 +82,10 @@
     });
 
     function mostrarPreview(titulo, link) {
-      let embed = "";
-      if (link.endsWith(".m3u8")) {
-        embed = `<video controls width="100%"><source src="${link}" type="application/x-mpegURL"></video>`;
-      } else if (link.includes("<iframe")) {
-        embed = link;
-      } else {
-        embed = `<iframe width="100%" height="360" src="${link}" frameborder="0" allowfullscreen></iframe>`;
-      }
-      preview.innerHTML = `<h3>${titulo}</h3>${embed}`;
+      preview.innerHTML = `
+        <h3>${titulo}</h3>
+        <button class="btn-preview" onclick="window.open('${link}', '_blank')">▶ Abrir Link</button>
+      `;
     }
   </script>
 </body>
