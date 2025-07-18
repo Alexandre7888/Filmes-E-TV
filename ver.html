@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Assistir Conteúdo</title>
+  <title>Catálogo Público</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
     h2 { margin-top: 40px; }
-    .btn { background: #2196F3; color: white; padding: 10px; border: none; cursor: pointer; }
+    button { padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -31,13 +31,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-
-    const contentDiv = document.getElementById("conteudo");
+    const token = new URLSearchParams(window.location.search).get("token");
+    const conteudo = document.getElementById("conteudo");
 
     if (!token) {
-      contentDiv.innerHTML = "<h2 style='color:red;'>❌ Token não encontrado na URL.</h2>";
+      conteudo.innerHTML = "<h2 style='color:red;'>❌ Token não encontrado na URL.</h2>";
     } else {
       const tokenRef = ref(db, "tokens/" + token);
       get(tokenRef).then(snapshot => {
@@ -46,16 +44,16 @@
           carregarCategoria("series", "📺 Séries");
           carregarCategoria("tv", "📡 TV Ao Vivo");
         } else {
-          contentDiv.innerHTML = "<h2 style='color:red;'>❌ Token inválido. Acesso negado.</h2>";
+          conteudo.innerHTML = "<h2 style='color:red;'>❌ Token inválido. Acesso negado.</h2>";
         }
       }).catch(error => {
-        contentDiv.innerHTML = `<h2 style='color:red;'>Erro ao verificar token: ${error}</h2>`;
+        conteudo.innerHTML = `<h2 style='color:red;'>Erro ao verificar token: ${error}</h2>`;
       });
     }
 
     function carregarCategoria(caminho, titulo) {
-      const categoriaRef = ref(db, caminho);
-      get(categoriaRef).then(snapshot => {
+      const refCat = ref(db, caminho);
+      get(refCat).then(snapshot => {
         if (snapshot.exists()) {
           const dados = snapshot.val();
           const secao = document.createElement("div");
@@ -66,16 +64,18 @@
             card.className = "card";
             card.innerHTML = `
               <h3>${item.titulo}</h3>
-              <button class="btn" onclick="window.open('${item.link}', '_blank')">▶ Assistir</button>
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+                <button>▶ Assistir</button>
+              </a>
             `;
             secao.appendChild(card);
           }
-          contentDiv.appendChild(secao);
+          conteudo.appendChild(secao);
         } else {
           const aviso = document.createElement("p");
           aviso.style.color = "orange";
           aviso.textContent = `⚠️ Nenhum conteúdo encontrado em: ${titulo}`;
-          contentDiv.appendChild(aviso);
+          conteudo.appendChild(aviso);
         }
       });
     }
