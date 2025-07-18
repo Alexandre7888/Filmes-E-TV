@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Adicionar Conteúdo Privado</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label, input, select, button { display: block; margin: 10px 0; font-size: 16px; }
+    #mensagem { margin: 10px 0; color: red; }
+    #preview { margin-top: 20px; background: #f0f0f0; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Adicionar Conteúdo no Catálogo Privado</h2>
+  <div id="mensagem"></div>
+  <form id="formulario">
+    <label for="titulo">Título:</label>
+    <input type="text" id="titulo" required>
+
+    <label for="tipo">Tipo:</label>
+    <select id="tipo">
+      <option value="filmes">Filme</option>
+      <option value="series">Série</option>
+      <option value="tv">TV</option>
+    </select>
+
+    <label for="link">Link do vídeo (iframe, m3u8, mp4...):</label>
+    <input type="text" id="link" required>
+
+    <button type="submit">Adicionar</button>
+  </form>
+
+  <div id="preview"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      databaseURL: "https://api7-5cde7-default-rtdb.firebaseio.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const token = new URLSearchParams(location.search).get("token");
+    const msg = document.getElementById("mensagem");
+    const preview = document.getElementById("preview");
+
+    if (!token) {
+      msg.textContent = "❌ Token não encontrado na URL.";
+      document.getElementById("formulario").style.display = "none";
+    }
+
+    document.getElementById("formulario").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const titulo = document.getElementById("titulo").value.trim();
+      const tipo = document.getElementById("tipo").value;
+      const link = document.getElementById("link").value.trim();
+
+      if (!titulo || !link) {
+        msg.textContent = "Preencha todos os campos.";
+        return;
+      }
+
+      const destino = ref(db, `conteudos/${token}/${tipo}`);
+      const novo = push(destino);
+      await set(novo, { titulo, link });
+
+      msg.style.color = "green";
+      msg.textContent = "✅ Conteúdo adicionado!";
+      mostrarPreview(titulo, link);
+      e.target.reset();
+    });
+
+    function mostrarPreview(titulo, link) {
+      let embed = "";
+      if (link.endsWith(".m3u8")) {
+        embed = `<video controls width="100%"><source src="${link}" type="application/x-mpegURL"></video>`;
+      } else if (link.includes("<iframe")) {
+        embed = link;
+      } else {
+        embed = `<iframe width="100%" height="360" src="${link}" frameborder="0" allowfullscreen></iframe>`;
+      }
+      preview.innerHTML = `<h3>${titulo}</h3>${embed}`;
+    }
+  </script>
+</body>
+</html>
