@@ -7,11 +7,11 @@
     body { font-family: Arial, sans-serif; padding: 20px; }
     .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
     h2 { margin-top: 40px; }
-    .btn { background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; }
+    button { padding: 10px; background: #2196F3; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1>🎞️ Catálogo Privado</h1>
+  <h1>🔒 Catálogo Privado</h1>
   <div id="conteudo"><p>Carregando...</p></div>
 
   <script type="module">
@@ -59,7 +59,9 @@
         card.className = "card";
         card.innerHTML = `
           <h3>${item.titulo}</h3>
-          <button class="btn" onclick="window.open('${item.link}', '_blank')">▶ Assistir</button>
+          <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+            <button>▶ Assistir</button>
+          </a>
         `;
         secao.appendChild(card);
       }
