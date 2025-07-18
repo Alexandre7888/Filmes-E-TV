@@ -1,81 +1,70 @@
 // catalogo.js
-import { db } from './firebaseConfig.js';
-import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { db } from "https://alexandre7888.github.io/Filmes-E-TV/firebaseConfig.js";
 
-// ✅ Lê o token direto da variável global no HTML
+// ✅ Usa o token definido no HTML
 const token = window.token;
 
-const conteudo = document.createElement("div");
-conteudo.id = "conteudo";
-document.body.innerHTML = "<h1>🎞️ Catálogo de Filmes, Séries e TV</h1>";
-document.body.appendChild(conteudo);
+// Função principal para carregar o catálogo (público e privado)
+export async function carregarCatalogo() {
+  const catalogo = { filmes: [], series: [], tv: [] };
 
-if (!token) {
-  conteudo.innerHTML = "<p style='color:red;'>❌ Token não informado no HTML.</p>";
-} else {
-  carregarPublico("filmes", "🎬 Filmes Públicos");
-  carregarPublico("series", "📺 Séries Públicas");
-  carregarPublico("tv", "📡 TV Públicas");
-  carregarPrivado(token);
-}
+  // 🔓 Pega conteúdos públicos
+  await Promise.all([
+    carregarCategoriaPublica("filmes", catalogo.filmes),
+    carregarCategoriaPublica("series", catalogo.series),
+    carregarCategoriaPublica("tv", catalogo.tv)
+  ]);
 
-function carregarPublico(caminho, titulo) {
-  const refCat = ref(db, caminho);
-  get(refCat).then(snapshot => {
-    if (snapshot.exists()) {
-      const dados = snapshot.val();
-      const secao = document.createElement("div");
-      secao.innerHTML = `<h2>${titulo}</h2>`;
-      for (let id in dados) {
-        const item = dados[id];
-        const card = criarCard(item);
-        secao.appendChild(card);
-      }
-      conteudo.appendChild(secao);
+  // 🔒 Pega conteúdos privados (se token válido)
+  if (token) {
+    const privRef = firebase.database().ref("conteudos/" + token);
+    const snap = await privRef.get();
+    if (snap.exists()) {
+      const dadosPrivados = snap.val();
+      if (dadosPrivados.filmes) catalogo.filmes.push(...Object.values(dadosPrivados.filmes));
+      if (dadosPrivados.series) catalogo.series.push(...Object.values(dadosPrivados.series));
+      if (dadosPrivados.tv) catalogo.tv.push(...Object.values(dadosPrivados.tv));
     }
-  });
-}
-
-function carregarPrivado(token) {
-  const refToken = ref(db, "conteudos/" + token);
-  get(refToken).then(snapshot => {
-    if (snapshot.exists()) {
-      const dados = snapshot.val();
-      carregarPrivadoSecao(dados.filmes, "🔒 Filmes Privados");
-      carregarPrivadoSecao(dados.series, "🔒 Séries Privadas");
-      carregarPrivadoSecao(dados.tv, "🔒 TV Privadas");
-    } else {
-      const aviso = document.createElement("p");
-      aviso.style.color = "red";
-      aviso.innerText = "❌ Token inválido ou sem conteúdo privado.";
-      conteudo.appendChild(aviso);
-    }
-  });
-}
-
-function carregarPrivadoSecao(lista, titulo) {
-  if (!lista) return;
-  const secao = document.createElement("div");
-  secao.innerHTML = `<h2>${titulo}</h2>`;
-  for (let id in lista) {
-    const item = lista[id];
-    const card = criarCard(item);
-    secao.appendChild(card);
   }
-  conteudo.appendChild(secao);
+
+  exibirCatalogo(catalogo);
+  return catalogo;
 }
 
-function criarCard(item) {
-  const card = document.createElement("div");
-  card.className = "card";
-  card.style.border = "1px solid #ccc";
-  card.style.padding = "10px";
-  card.style.marginBottom = "10px";
-  card.innerHTML = `
-    <h3>${item.titulo}</h3>
-    <a href="${item.link}" target="_blank" rel="noopener noreferrer">
-      <button>▶ Assistir</button>
-    </a>
-  `;
-  return card;
+// 🔁 Pega dados de cada tipo público
+async function carregarCategoriaPublica(caminho, destino) {
+  const refCat = firebase.database().ref(caminho);
+  const snap = await refCat.get();
+  if (snap.exists()) {
+    destino.push(...Object.values(snap.val()));
+  }
+}
+
+// 🖼️ Mostra na tela
+function exibirCatalogo(catalogo) {
+  const conteudo = document.body;
+  conteudo.innerHTML = "<h1>🎞️ Catálogo</h1>";
+
+  for (const tipo in catalogo) {
+    if (catalogo[tipo].length === 0) continue;
+
+    const secao = document.createElement("div");
+    secao.innerHTML = `<h2>${tipo.toUpperCase()}</h2>`;
+
+    for (const item of catalogo[tipo]) {
+      const card = document.createElement("div");
+      card.style.border = "1px solid #ccc";
+      card.style.padding = "10px";
+      card.style.margin = "10px 0";
+      card.innerHTML = `
+        <h3>${item.titulo}</h3>
+        <a href="${item.link}" target="_blank">
+          <button>▶ Assistir</button>
+        </a>
+      `;
+      secao.appendChild(card);
+    }
+
+    conteudo.appendChild(secao);
+  }
 }
