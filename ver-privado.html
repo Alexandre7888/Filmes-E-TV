@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Catálogo Privado</title>
+  <meta charset="UTF-8">
+  <title>Catálogo Público e Privado</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
     h2 { margin-top: 40px; }
-    button { padding: 10px; background: #2196F3; color: white; border: none; cursor: pointer; }
+    button {
+      padding: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>🔒 Catálogo Privado</h1>
-  <div id="conteudo"><p>Carregando...</p></div>
+  <h1>🎞️ Catálogo de Filmes, Séries e TV</h1>
+  <div id="conteudo"><p>Carregando conteúdo...</p></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -30,26 +36,61 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const token = new URLSearchParams(location.search).get("token");
-    const conteudo = document.getElementById("conteudo");
 
-    if (!token) {
-      conteudo.innerHTML = "<h2 style='color:red;'>❌ Token não informado.</h2>";
-    } else {
+    const token = new URLSearchParams(window.location.search).get("token");
+    const conteudo = document.getElementById("conteudo");
+    conteudo.innerHTML = "";
+
+    // Carrega conteúdo público (servidor principal)
+    carregarCategoriaGeral("filmes", "🎬 Filmes Públicos");
+    carregarCategoriaGeral("series", "📺 Séries Públicas");
+    carregarCategoriaGeral("tv", "📡 Canais de TV Públicos");
+
+    // Se tiver token, carrega também conteúdo privado
+    if (token) {
       const refToken = ref(db, "conteudos/" + token);
-      get(refToken).then(snap => {
-        if (!snap.exists()) {
-          conteudo.innerHTML = "<h2 style='color:red;'>❌ Token inválido ou sem conteúdo.</h2>";
-          return;
+      get(refToken).then(snapshot => {
+        if (snapshot.exists()) {
+          const dados = snapshot.val();
+          carregarCategoriaPrivada(dados.filmes, "🔒 Filmes Privados");
+          carregarCategoriaPrivada(dados.series, "🔒 Séries Privadas");
+          carregarCategoriaPrivada(dados.tv, "🔒 Canais de TV Privados");
+        } else {
+          const aviso = document.createElement("p");
+          aviso.style.color = "red";
+          aviso.innerHTML = "❌ Token inválido ou sem conteúdo privado.";
+          conteudo.appendChild(aviso);
         }
-        const dados = snap.val();
-        carregarCategoria(dados.filmes, "🎬 Filmes");
-        carregarCategoria(dados.series, "📺 Séries");
-        carregarCategoria(dados.tv, "📡 TV");
       });
     }
 
-    function carregarCategoria(lista, titulo) {
+    // Conteúdo público
+    function carregarCategoriaGeral(caminho, titulo) {
+      const refCat = ref(db, caminho);
+      get(refCat).then(snapshot => {
+        if (snapshot.exists()) {
+          const dados = snapshot.val();
+          const secao = document.createElement("div");
+          secao.innerHTML = `<h2>${titulo}</h2>`;
+          for (let id in dados) {
+            const item = dados[id];
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <h3>${item.titulo}</h3>
+              <a href="${item.link}" target="_blank" rel="noopener noreferrer">
+                <button>▶ Assistir</button>
+              </a>
+            `;
+            secao.appendChild(card);
+          }
+          conteudo.appendChild(secao);
+        }
+      });
+    }
+
+    // Conteúdo privado
+    function carregarCategoriaPrivada(lista, titulo) {
       if (!lista) return;
       const secao = document.createElement("div");
       secao.innerHTML = `<h2>${titulo}</h2>`;
