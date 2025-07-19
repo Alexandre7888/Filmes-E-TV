@@ -1,24 +1,22 @@
-// catalogo.js
 import { db } from "https://alexandre7888.github.io/Filmes-E-TV/firebaseConfig.js";
+import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// ✅ Usa o token definido no HTML
 const token = window.token;
 
-// Função principal para carregar o catálogo (público e privado)
 export async function carregarCatalogo() {
   const catalogo = { filmes: [], series: [], tv: [] };
 
-  // 🔓 Pega conteúdos públicos
+  // 🔓 Públicos
   await Promise.all([
     carregarCategoriaPublica("filmes", catalogo.filmes),
     carregarCategoriaPublica("series", catalogo.series),
     carregarCategoriaPublica("tv", catalogo.tv)
   ]);
 
-  // 🔒 Pega conteúdos privados (se token válido)
+  // 🔒 Privados
   if (token) {
-    const privRef = firebase.database().ref("conteudos/" + token);
-    const snap = await privRef.get();
+    const privRef = ref(db, "conteudos/" + token);
+    const snap = await get(privRef);
     if (snap.exists()) {
       const dadosPrivados = snap.val();
       if (dadosPrivados.filmes) catalogo.filmes.push(...Object.values(dadosPrivados.filmes));
@@ -31,16 +29,14 @@ export async function carregarCatalogo() {
   return catalogo;
 }
 
-// 🔁 Pega dados de cada tipo público
 async function carregarCategoriaPublica(caminho, destino) {
-  const refCat = firebase.database().ref(caminho);
-  const snap = await refCat.get();
+  const refCat = ref(db, caminho);
+  const snap = await get(refCat);
   if (snap.exists()) {
     destino.push(...Object.values(snap.val()));
   }
 }
 
-// 🖼️ Mostra na tela
 function exibirCatalogo(catalogo) {
   const conteudo = document.body;
   conteudo.innerHTML = "<h1>🎞️ Catálogo</h1>";
