@@ -1,4 +1,5 @@
-// firebaseConfig.js
+// firebaseConfig.js hospedado no GitHub
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -13,6 +14,4 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-export { db };
+export const db = getDatabase(app);
