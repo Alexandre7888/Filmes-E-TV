@@ -2,23 +2,98 @@
 import { db } from "https://alexandre7888.github.io/Filmes-E-TV/firebaseConfig.js";
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-window.token = window.token || ""; // Defina no HTML se quiser
+window.token = window.token || "";
 
 let catalogoGlobal = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  criarCamposDeBusca();
-  const catalogo = await carregarCatalogoComDados();
-  catalogoGlobal = catalogo;
+  aplicarCSS();
+  criarCampoDeBusca();
+  catalogoGlobal = await carregarCatalogoComDados();
   exibirCatalogoFiltrado("");
 });
 
-function criarCamposDeBusca() {
+function aplicarCSS() {
+  const style = document.createElement("style");
+  style.textContent = `
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    #catalogo {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    input[type="text"] {
+      padding: 12px;
+      width: 100%;
+      max-width: 600px;
+      font-size: 16px;
+      margin: 0 auto 30px;
+      display: block;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+      margin-bottom: 25px;
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.01);
+    }
+    .card img {
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+    .card h3 {
+      margin: 10px 0 5px;
+      font-size: 22px;
+      color: #34495e;
+    }
+    .card p {
+      font-size: 15px;
+      margin: 4px 0;
+      color: #555;
+    }
+    .card button {
+      margin-top: 10px;
+      padding: 10px 15px;
+      font-size: 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .card button:hover {
+      background-color: #45a049;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function criarCampoDeBusca() {
   const busca = document.createElement("input");
-  busca.placeholder = "🔍 Pesquisar por título";
-  busca.style.margin = "10px";
-  busca.style.padding = "8px";
-  busca.style.width = "95%";
+  busca.type = "text";
+  busca.placeholder = "🔍 Pesquisar por título, autor ou gênero";
   busca.addEventListener("input", () => {
     const termo = busca.value.toLowerCase();
     exibirCatalogoFiltrado(termo);
@@ -71,23 +146,22 @@ function exibirCatalogoFiltrado(filtro) {
   });
 
   if (resultados.length === 0) {
-    container.innerHTML = "<p>Nada encontrado.</p>";
+    container.innerHTML = "<p style='text-align:center;'>⚠️ Nada encontrado.</p>";
     document.body.appendChild(container);
     return;
   }
 
   resultados.forEach(item => {
     const card = document.createElement("div");
-    card.style.border = "1px solid #ccc";
-    card.style.padding = "10px";
-    card.style.margin = "10px 0";
-    card.style.background = "#f9f9f9";
+    card.className = "card";
 
-    let html = `<h3>${item.titulo || "Sem título"}</h3>`;
+    let html = "";
 
     if (item.capa) {
-      html += `<img src="${item.capa}" style="max-width:200px; display:block; margin-bottom:8px;">`;
+      html += `<img src="${item.capa}" alt="Capa do conteúdo">`;
     }
+
+    html += `<h3>${item.titulo || "Sem título"}</h3>`;
 
     if (item.genero) {
       const generos = item.genero.split(",").map(g => g.trim()).filter(Boolean);
@@ -104,7 +178,7 @@ function exibirCatalogoFiltrado(filtro) {
     }
 
     if (item.link) {
-      html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
+      html += `<a href="${item.link}" target="_blank" rel="noopener noreferrer"><button>▶ Assistir</button></a>`;
     }
 
     card.innerHTML = html;
