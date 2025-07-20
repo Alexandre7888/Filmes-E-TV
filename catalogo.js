@@ -3,13 +3,14 @@ import { db } from "https://alexandre7888.github.io/Filmes-E-TV/firebaseConfig.j
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 window.token = window.token || "";
-
 let catalogoGlobal = [];
+let generosSelecionados = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
   aplicarCSS();
-  criarCampoDeBusca();
+  criarBarraDeBusca();
   catalogoGlobal = await carregarCatalogoComDados();
+  gerarBotoesDeGenero(catalogoGlobal);
   exibirCatalogoFiltrado("");
 });
 
@@ -23,55 +24,71 @@ function aplicarCSS() {
       margin: 0;
       padding: 20px;
     }
-    #catalogo {
-      max-width: 900px;
-      margin: 0 auto;
-    }
     h1 {
       text-align: center;
-      color: #2c3e50;
       margin-bottom: 30px;
+      color: #2c3e50;
+    }
+    .topo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
     }
     input[type="text"] {
       padding: 12px;
-      width: 100%;
-      max-width: 600px;
+      width: 300px;
       font-size: 16px;
-      margin: 0 auto 30px;
-      display: block;
       border: 1px solid #ccc;
       border-radius: 8px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .filtros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filtros button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: #ddd;
+      cursor: pointer;
+    }
+    .filtros button.selecionado {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .secao {
+      margin-bottom: 40px;
+    }
+    .secao h2 {
+      color: #2c3e50;
+      margin-bottom: 20px;
     }
     .card {
       background: white;
       border-radius: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      overflow: hidden;
-      margin-bottom: 25px;
-      display: flex;
-      flex-direction: column;
       padding: 15px;
-      transition: transform 0.2s;
+      margin-bottom: 20px;
     }
     .card:hover {
       transform: scale(1.01);
     }
     .card img {
-      width: 100%;
-      max-width: 300px;
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
       margin-bottom: 10px;
-      border-radius: 10px;
     }
     .card h3 {
-      margin: 10px 0 5px;
-      font-size: 22px;
+      margin-top: 0;
       color: #34495e;
     }
     .card p {
-      font-size: 15px;
-      margin: 4px 0;
-      color: #555;
+      margin: 5px 0;
     }
     .card button {
       margin-top: 10px;
@@ -90,22 +107,38 @@ function aplicarCSS() {
   document.head.appendChild(style);
 }
 
-function criarCampoDeBusca() {
-  const busca = document.createElement("input");
-  busca.type = "text";
-  busca.placeholder = "🔍 Pesquisar por título, autor ou gênero";
-  busca.addEventListener("input", () => {
-    const termo = busca.value.toLowerCase();
-    exibirCatalogoFiltrado(termo);
+function criarBarraDeBusca() {
+  const h1 = document.createElement("h1");
+  h1.textContent = "🎞️ Catálogo de Filmes, Séries e TV";
+  document.body.appendChild(h1);
+
+  const topo = document.createElement("div");
+  topo.className = "topo";
+
+  const campoTitulo = document.createElement("input");
+  campoTitulo.type = "text";
+  campoTitulo.placeholder = "🔍 Pesquisar por título";
+  campoTitulo.addEventListener("input", () => {
+    exibirCatalogoFiltrado(campoTitulo.value.toLowerCase());
   });
-  document.body.prepend(busca);
+
+  const filtros = document.createElement("div");
+  filtros.id = "filtros";
+  filtros.className = "filtros";
+
+  topo.appendChild(campoTitulo);
+  topo.appendChild(filtros);
+  document.body.appendChild(topo);
+
+  const catalogo = document.createElement("div");
+  catalogo.id = "catalogo";
+  document.body.appendChild(catalogo);
 }
 
 async function carregarCatalogoComDados() {
   const token = window.token;
   const catalogo = [];
 
-  // Públicos
   for (const tipo of ["filmes", "series", "tv"]) {
     const snap = await get(ref(db, tipo));
     if (snap.exists()) {
@@ -113,7 +146,6 @@ async function carregarCatalogoComDados() {
     }
   }
 
-  // Privados
   if (token) {
     const snap = await get(ref(db, "conteudos/" + token));
     if (snap.exists()) {
@@ -129,61 +161,100 @@ async function carregarCatalogoComDados() {
   return catalogo;
 }
 
-function exibirCatalogoFiltrado(filtro) {
-  const container = document.getElementById("catalogo") || document.createElement("div");
-  container.id = "catalogo";
+function gerarBotoesDeGenero(catalogo) {
+  const filtrosDiv = document.getElementById("filtros");
+  const todosGeneros = new Set();
+
+  catalogo.forEach(item => {
+    if (item.genero) {
+      item.genero.split(" ").map(g => g.trim()).forEach(g => todosGeneros.add(g));
+    }
+  });
+
+  [...todosGeneros].sort().forEach(genero => {
+    const botao = document.createElement("button");
+    botao.textContent = genero;
+    botao.addEventListener("click", () => {
+      if (generosSelecionados.includes(genero)) {
+        generosSelecionados = generosSelecionados.filter(g => g !== genero);
+        botao.classList.remove("selecionado");
+      } else {
+        generosSelecionados.push(genero);
+        botao.classList.add("selecionado");
+      }
+      const campo = document.querySelector("input[type='text']");
+      exibirCatalogoFiltrado(campo.value.toLowerCase());
+    });
+    filtrosDiv.appendChild(botao);
+  });
+}
+
+function exibirCatalogoFiltrado(filtroTitulo) {
+  const container = document.getElementById("catalogo");
   container.innerHTML = "";
 
-  const resultados = catalogoGlobal.filter(item => {
+  const categorias = {
+    filmes: { titulo: "🎬 Filmes", lista: [] },
+    series: { titulo: "📺 Séries", lista: [] },
+    tv: { titulo: "📡 TV", lista: [] },
+  };
+
+  catalogoGlobal.forEach(item => {
     const titulo = item.titulo?.toLowerCase() || "";
-    const genero = item.genero?.toLowerCase() || "";
-    const autor = item.autor?.toLowerCase() || "";
-    return (
-      titulo.includes(filtro) ||
-      genero.includes(filtro) ||
-      autor.includes(filtro)
-    );
+    const generosItem = item.genero ? item.genero.split(" ").map(g => g.toLowerCase()) : [];
+
+    const correspondeTitulo = titulo.includes(filtroTitulo);
+    const correspondeGenero =
+      generosSelecionados.length === 0 ||
+      generosSelecionados.every(g => generosItem.includes(g));
+
+    if (correspondeTitulo && correspondeGenero && categorias[item.tipo]) {
+      categorias[item.tipo].lista.push(item);
+    }
   });
 
-  if (resultados.length === 0) {
+  Object.keys(categorias).forEach(tipo => {
+    const { titulo, lista } = categorias[tipo];
+    if (lista.length > 0) {
+      const secao = document.createElement("div");
+      secao.className = "secao";
+      secao.innerHTML = `<h2>${titulo}</h2>`;
+
+      lista.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        let html = "";
+
+        if (item.capa) {
+          html += `<img src="${item.capa}" alt="Capa">`;
+        }
+
+        html += `<h3>${item.titulo || "Sem título"}</h3>`;
+
+        if (item.genero) {
+          const generos = item.genero.split(" ").filter(Boolean);
+          html += `<p><strong>Gêneros:</strong><br>${generos.map(g => `• ${g}`).join("<br>")}</p>`;
+        }
+
+        if (item.autor) {
+          const autores = item.autor.split(",").map(a => a.trim());
+          html += `<p><strong>Autor:</strong><br>${autores.join(", ")}</p>`;
+        }
+
+        if (item.link) {
+          html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
+        }
+
+        card.innerHTML = html;
+        secao.appendChild(card);
+      });
+
+      container.appendChild(secao);
+    }
+  });
+
+  if (container.innerHTML.trim() === "") {
     container.innerHTML = "<p style='text-align:center;'>⚠️ Nada encontrado.</p>";
-    document.body.appendChild(container);
-    return;
   }
-
-  resultados.forEach(item => {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    let html = "";
-
-    if (item.capa) {
-      html += `<img src="${item.capa}" alt="Capa do conteúdo">`;
-    }
-
-    html += `<h3>${item.titulo || "Sem título"}</h3>`;
-
-    if (item.genero) {
-      const generos = item.genero.split(",").map(g => g.trim()).filter(Boolean);
-      if (generos.length) {
-        html += `<p><strong>Gêneros:</strong><br>${generos.map(g => `• ${g}`).join("<br>")}</p>`;
-      }
-    }
-
-    if (item.autor) {
-      const autores = item.autor.split(",").map(a => a.trim()).filter(Boolean);
-      if (autores.length) {
-        html += `<p><strong>Autor:</strong><br>${autores.join(", ")}</p>`;
-      }
-    }
-
-    if (item.link) {
-      html += `<a href="${item.link}" target="_blank" rel="noopener noreferrer"><button>▶ Assistir</button></a>`;
-    }
-
-    card.innerHTML = html;
-    container.appendChild(card);
-  });
-
-  document.body.appendChild(container);
 }
