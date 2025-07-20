@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Adicionar Gênero, Autor e Capa</title>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+    select, input, button { margin: 10px 0; padding: 8px; width: 100%; font-size: 16px; }
+    label { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>📚 Adicionar Gênero, Autor e Capa</h2>
+
+  <label>Onde deseja adicionar?</label>
+  <select id="modo">
+    <option value="">Escolha...</option>
+    <option value="publico">Conteúdo Público</option>
+    <option value="privado">Conteúdo Privado</option>
+  </select>
+
+  <div id="selecao"></div>
+
+  <div id="formulario" style="display:none;">
+    <label for="generos">Gêneros (separados por vírgula):</label>
+    <input type="text" id="generos" placeholder="Ex: Terror, Suspense">
+
+    <label for="autor">Autores (separados por vírgula, opcional):</label>
+    <input type="text" id="autor" placeholder="Ex: John Doe, Jane Smith">
+
+    <label for="capa">Link da Capa (imagem):</label>
+    <input type="text" id="capa" placeholder="https://...jpg">
+
+    <button id="salvarBtn">Salvar</button>
+    <div id="mensagem"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, get, update, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      databaseURL: "https://api7-5cde7-default-rtdb.firebaseio.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const selecaoDiv = document.getElementById("selecao");
+    const formulario = document.getElementById("formulario");
+    const mensagem = document.getElementById("mensagem");
+
+    document.getElementById("modo").addEventListener("change", async (e) => {
+      const modo = e.target.value;
+      selecaoDiv.innerHTML = "";
+      formulario.style.display = "none";
+
+      if (modo === "publico") {
+        await exibirConteudosPublicos();
+      } else if (modo === "privado") {
+        await exibirTokens();
+      }
+    });
+
+    async function exibirConteudosPublicos() {
+      const tipos = ["filmes", "series", "tv"];
+      let opcoes = "";
+
+      for (const tipo of tipos) {
+        const snap = await get(ref(db, tipo));
+        if (snap.exists()) {
+          const dados = snap.val();
+          for (const id in dados) {
+            const item = dados[id];
+            opcoes += `<option value="${tipo}/${id}">${tipo.toUpperCase()}: ${item.titulo}</option>`;
+          }
+        }
+      }
+
+      selecaoDiv.innerHTML = `
+        <label>Escolha um conteúdo público:</label>
+        <select id="itemSelecionado">${opcoes}</select>
+      `;
+      formulario.style.display = "block";
+    }
+
+    async function exibirTokens() {
+      const snap = await get(ref(db, "conteudos"));
+      if (snap.exists()) {
+        const tokens = Object.keys(snap.val());
+        let opcoes = tokens.map(t => `<option value="${t}">${t}</option>`).join("");
+
+        selecaoDiv.innerHTML = `
+          <label>Escolha um token:</label>
+          <select id="tokenSelecionado">${opcoes}</select>
+          <div id="conteudosToken"></div>
+        `;
+
+        document.getElementById("tokenSelecionado").addEventListener("change", async (e) => {
+          const token = e.target.value;
+          const tipos = ["filmes", "series", "tv"];
+          let opcoes = "";
+
+          for (const tipo of tipos) {
+            const snapTipo = await get(ref(db, `conteudos/${token}/${tipo}`));
+            if (snapTipo.exists()) {
+              const dados = snapTipo.val();
+              for (const id in dados) {
+                const item = dados[id];
+                opcoes += `<option value="conteudos/${token}/${tipo}/${id}">${tipo.toUpperCase()}: ${item.titulo}</option>`;
+              }
+            }
+          }
+
+          document.getElementById("conteudosToken").innerHTML = `
+            <label>Escolha o conteúdo:</label>
+            <select id="itemSelecionado">${opcoes}</select>
+          `;
+          formulario.style.display = "block";
+        });
+      }
+    }
+
+    async function adicionar() {
+      const caminho = document.getElementById("itemSelecionado")?.value;
+      if (!caminho) {
+        mensagem.textContent = "❌ Selecione um conteúdo primeiro.";
+        return;
+      }
+
+      const generos = document.getElementById("generos").value.split(",").map(g => g.trim()).filter(Boolean);
+      const autores = document.getElementById("autor").value.split(",").map(a => a.trim()).filter(Boolean);
+      const capa = document.getElementById("capa").value.trim();
+
+      try {
+        const snap = await get(ref(db, caminho));
+        if (snap.exists()) {
+          const atual = snap.val();
+          const novosGeneros = [...new Set([...(atual.generos || []), ...generos])];
+          const novosAutores = [...new Set([...(atual.autores || []), ...autores])];
+
+          await update(ref(db, caminho), {
+            generos: novosGeneros,
+            autores: novosAutores,
+            capa: capa || atual.capa || ""
+          });
+
+          mensagem.style.color = "green";
+          mensagem.textContent = "✅ Atualizado com sucesso!";
+        } else {
+          mensagem.textContent = "❌ Conteúdo não encontrado.";
+        }
+      } catch (erro) {
+        mensagem.textContent = "❌ Erro ao atualizar: " + erro.message;
+      }
+    }
+
+    // Corrige o botão salvar com module
+    document.getElementById("salvarBtn").addEventListener("click", adicionar);
+  </script>
+</body>
+</html>
