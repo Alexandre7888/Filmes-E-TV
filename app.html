@@ -1,58 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Catálogo iTV</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <title>🎞️ Catálogo iTV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="manifest.json" />
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #111;
-      color: #fff;
-      padding: 20px;
-      margin: 0;
-    }
-    h1 {
-      text-align: center;
-      color: #e50914;
-    }
-    #busca {
-      display: block;
-      margin: 20px auto;
-      padding: 10px;
-      width: 90%;
-      max-width: 500px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-      outline: none;
-    }
-    .card {
-      background: #222;
-      border-radius: 10px;
-      padding: 15px;
-      margin: 15px 0;
-    }
-    .card iframe {
-      width: 100%;
-      height: 360px;
-      border: none;
-      margin-top: 10px;
-    }
-    .card h3 {
-      margin: 10px 0 5px;
-    }
-    .card p {
-      margin: 4px 0;
-    }
+    body { font-family: sans-serif; background: #111; color: #fff; margin: 0; padding: 20px; }
+    h1, h2 { text-align: center; color: #e50914; }
+    #busca { display: block; margin: 20px auto; padding: 10px; width: 90%; max-width: 500px; border-radius: 5px; font-size: 16px; }
+    .card { background: #222; margin: 10px 0; padding: 15px; border-radius: 8px; }
+    .card iframe { width: 100%; height: 300px; border: none; border-radius: 8px; margin-top: 10px; }
+    .card img { width: 100%; max-width: 300px; border-radius: 8px; }
+    .card h3 { margin: 10px 0 5px; }
+    .card p { margin: 4px 0; }
+    button { padding: 10px 20px; font-size: 15px; background: #e50914; border: none; color: #fff; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #c20810; }
   </style>
 </head>
 <body>
   <h1>🎞️ Catálogo iTV</h1>
-  <input id="busca" type="text" placeholder="🔍 Pesquisar por título, autor ou gênero...">
-  <div id="conteudo"><p>Carregando catálogo...</p></div>
+  <input id="busca" type="text" placeholder="🔍 Pesquisar por título, autor ou gênero..." />
+  <div id="conteudo"><p>Carregando...</p></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -82,12 +52,12 @@
       return snap.exists();
     }
 
-    async function carregarCategoria(path) {
+    async function carregarCategoria(path, tipo) {
       const snap = await get(ref(db, path));
       if (snap.exists()) {
         const dados = snap.val();
         for (let id in dados) {
-          todosItens.push(dados[id]);
+          todosItens.push({ ...dados[id], tipo });
         }
       }
     }
@@ -95,36 +65,60 @@
     function exibirResultados(itens) {
       conteudo.innerHTML = "";
       if (itens.length === 0) {
-        conteudo.innerHTML = "<p style='text-align:center; color:orange;'>⚠️ Nenhum resultado encontrado.</p>";
+        conteudo.innerHTML = "<p style='text-align:center;'>⚠️ Nenhum conteúdo encontrado.</p>";
         return;
       }
 
+      const categorias = {
+        filmes: [],
+        series: [],
+        tv: [],
+      };
+
       itens.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
-
-        let html = `<h3>${item.titulo || "Sem título"}</h3>`;
-
-        if (item.genero) {
-          html += `<p><strong>Gêneros:</strong> ${item.genero}</p>`;
-        }
-
-        if (item.autor) {
-          html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
-        }
-
-        if (item.link) {
-          let linkCorrigido = item.link;
-          if (linkCorrigido.includes("drive.google.com") && !linkCorrigido.includes("/preview")) {
-            linkCorrigido = linkCorrigido.replace("/view?usp=drivesdk", "/preview");
-            linkCorrigido = linkCorrigido.replace("/view", "/preview");
-          }
-          html += `<iframe src="${linkCorrigido}" allowfullscreen></iframe>`;
-        }
-
-        card.innerHTML = html;
-        conteudo.appendChild(card);
+        if (categorias[item.tipo]) categorias[item.tipo].push(item);
       });
+
+      for (const tipo in categorias) {
+        if (categorias[tipo].length > 0) {
+          const titulo = tipo === "filmes" ? "🎬 Filmes" : tipo === "series" ? "📺 Séries" : "📡 TV";
+          const secao = document.createElement("div");
+          secao.innerHTML = `<h2>${titulo}</h2>`;
+
+          categorias[tipo].forEach(item => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            let html = "";
+
+            if (item.capa && tipo !== "filmes") {
+              html += `<img src="${item.capa}" alt="Capa">`;
+            }
+
+            html += `<h3>${item.titulo || "Sem título"}</h3>`;
+
+            if (item.genero) {
+              html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
+            }
+            if (item.autor) {
+              html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
+            }
+
+            if (item.link) {
+              if (tipo === "filmes") {
+                html += `<iframe src="${item.link}" allowfullscreen></iframe>`;
+              } else {
+                html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
+              }
+            }
+
+            card.innerHTML = html;
+            secao.appendChild(card);
+          });
+
+          conteudo.appendChild(secao);
+        }
+      }
     }
 
     campoBusca.addEventListener("input", () => {
@@ -141,13 +135,13 @@
       conteudo.innerHTML = "<p>Verificando token...</p>";
       const valido = await verificarToken();
       if (!valido) {
-        conteudo.innerHTML = `<h2 style="color:red;">❌ Token inválido.</h2>`;
+        conteudo.innerHTML = "<p style='color:red;'>❌ Token inválido.</p>";
         return;
       }
 
-      await carregarCategoria("filmes");
-      await carregarCategoria("series");
-      await carregarCategoria("tv");
+      await carregarCategoria("filmes", "filmes");
+      await carregarCategoria("series", "series");
+      await carregarCategoria("tv", "tv");
 
       exibirResultados(todosItens);
     }
@@ -155,7 +149,6 @@
     iniciar();
   </script>
 
-  <!-- ✅ SCRIPT DO SERVICE WORKER -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
