@@ -18,6 +18,17 @@
       text-align: center;
       color: #e50914;
     }
+    #busca {
+      display: block;
+      margin: 20px auto;
+      padding: 10px;
+      width: 90%;
+      max-width: 500px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+    }
     .card {
       background: #222;
       border-radius: 10px;
@@ -53,6 +64,7 @@
 </head>
 <body>
   <h1>🎞️ Catálogo iTV</h1>
+  <input id="busca" type="text" placeholder="🔍 Pesquisar por título, autor ou gênero...">
   <div id="conteudo"><p>Carregando catálogo...</p></div>
 
   <script type="module">
@@ -74,64 +86,86 @@
 
     const token = new URLSearchParams(location.search).get("token") || "PUBLICO";
     const conteudo = document.getElementById("conteudo");
+    const campoBusca = document.getElementById("busca");
+
+    let todosItens = [];
 
     async function verificarToken() {
       const snap = await get(ref(db, "tokens/" + token));
       return snap.exists();
     }
 
-    async function carregarCategoria(path, titulo) {
+    async function carregarCategoria(path) {
       const snap = await get(ref(db, path));
       if (snap.exists()) {
         const dados = snap.val();
-        const secao = document.createElement("div");
-        secao.innerHTML = `<h2>${titulo}</h2>`;
         for (let id in dados) {
-          const item = dados[id];
-          const card = document.createElement("div");
-          card.className = "card";
-          let html = "";
-
-          if (item.capa) {
-            html += `<img src="${item.capa}" alt="Capa">`;
-          }
-
-          html += `<h3>${item.titulo || "Sem título"}</h3>`;
-
-          if (item.genero) {
-            const generos = item.genero.split(",").map(g => `• ${g.trim()}`).join("<br>");
-            html += `<p><strong>Gêneros:</strong><br>${generos}</p>`;
-          }
-
-          if (item.autor) {
-            const autores = item.autor.split(",").map(a => a.trim()).join(", ");
-            html += `<p><strong>Autor:</strong> ${autores}</p>`;
-          }
-
-          html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
-          card.innerHTML = html;
-          secao.appendChild(card);
+          todosItens.push(dados[id]);
         }
-        conteudo.appendChild(secao);
-      } else {
-        const aviso = document.createElement("p");
-        aviso.style.color = "orange";
-        aviso.textContent = `⚠️ Nenhum conteúdo encontrado para: ${titulo}`;
-        conteudo.appendChild(aviso);
       }
     }
 
-    async function iniciar() {
+    function exibirResultados(itens) {
       conteudo.innerHTML = "";
-      const tokenValido = await verificarToken();
-      if (!tokenValido) {
+      if (itens.length === 0) {
+        conteudo.innerHTML = "<p style='text-align:center; color:orange;'>⚠️ Nenhum resultado encontrado.</p>";
+        return;
+      }
+
+      itens.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        let html = "";
+
+        if (item.capa) {
+          html += `<img src="${item.capa}" alt="Capa">`;
+        }
+
+        html += `<h3>${item.titulo || "Sem título"}</h3>`;
+
+        if (item.genero) {
+          const generos = item.genero.split(",").map(g => `• ${g.trim()}`).join("<br>");
+          html += `<p><strong>Gêneros:</strong><br>${generos}</p>`;
+        }
+
+        if (item.autor) {
+          const autores = item.autor.split(",").map(a => a.trim()).join(", ");
+          html += `<p><strong>Autor:</strong> ${autores}</p>`;
+        }
+
+        if (item.link) {
+          html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
+        }
+
+        card.innerHTML = html;
+        conteudo.appendChild(card);
+      });
+    }
+
+    campoBusca.addEventListener("input", () => {
+      const termo = campoBusca.value.toLowerCase();
+      const filtrados = todosItens.filter(item =>
+        (item.titulo || "").toLowerCase().includes(termo) ||
+        (item.genero || "").toLowerCase().includes(termo) ||
+        (item.autor || "").toLowerCase().includes(termo)
+      );
+      exibirResultados(filtrados);
+    });
+
+    async function iniciar() {
+      conteudo.innerHTML = "<p>Verificando token...</p>";
+      const valido = await verificarToken();
+      if (!valido) {
         conteudo.innerHTML = `<h2 style="color:red;">❌ Token inválido.</h2>`;
         return;
       }
 
-      await carregarCategoria("filmes", "🎬 Filmes");
-      await carregarCategoria("series", "📺 Séries");
-      await carregarCategoria("tv", "📡 TV Ao Vivo");
+      await carregarCategoria("filmes");
+      await carregarCategoria("series");
+      await carregarCategoria("tv");
+
+      exibirResultados(todosItens);
     }
 
     iniciar();
