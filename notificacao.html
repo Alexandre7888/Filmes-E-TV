@@ -1,87 +1,74 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>🔔 Ativar Notificações | ITV</title>
+  <meta charset="UTF-8" />
+  <title>Ativar Notificações - PWA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
+      padding: 40px;
       text-align: center;
-      padding: 50px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
     }
     button {
-      padding: 20px 40px;
       font-size: 20px;
-      background: #e50914;
-      color: white;
+      padding: 15px 30px;
+      background-color: #007bff;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
+      color: white;
       cursor: pointer;
-      transition: 0.3s;
+      transition: background 0.3s;
     }
     button:hover {
-      background: #f40612;
+      background-color: #0056b3;
     }
-    pre {
-      background: #222;
-      padding: 15px;
-      border-radius: 8px;
+    .log {
       margin-top: 20px;
-      color: #0f0;
-      max-width: 90%;
-      margin-left: auto;
-      margin-right: auto;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <h1>📢 Ative as notificações do ITV</h1>
-  <button id="ativar">✅ Ativar Notificações</button>
-  <pre id="tokenOutput">Clique no botão para gerar o token...</pre>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  <h1>🔔 Ative as Notificações</h1>
+  <button onclick="ativarNotificacoes()">Ativar</button>
+  <div class="log" id="log">Status: aguardando ação...</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
-      authDomain: "api7-5cde7.firebaseapp.com",
-      projectId: "api7-5cde7",
-      storageBucket: "api7-5cde7.appspot.com",
-      messagingSenderId: "113015470459",
-      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+  <!-- SDK do Pusher Beams -->
+  <script src="https://js.pusher.com/beams/2.1.0/push-notifications-cdn.js"></script>
+
+  <script>
+    const log = (mensagem) => {
+      document.getElementById("log").textContent = "Status: " + mensagem;
+      console.log("ℹ️", mensagem);
     };
 
-    const app = initializeApp(firebaseConfig);
-    const messaging = getMessaging(app);
+    function ativarNotificacoes() {
+      const beamsClient = new PusherPushNotifications.Client({
+        instanceId: '85d1cfeb-fed7-4f34-8f59-df1f0a6c0f89', // Substitua pelo seu instanceId real
+      });
 
-    document.getElementById('ativar').addEventListener('click', async () => {
-      try {
-        const token = await getToken(messaging, {
-          vapidKey: "BC5a1793nNeYjHNryG74NnlwNTMyKKWRN4q5MNlnbUpZyOElQqziKR073hFTCE3MOJKem6a13d15iD9dagd1g5k"
-        });
-        if (token) {
-          document.getElementById("tokenOutput").textContent = token;
-          alert("🔔 Notificações ativadas com sucesso!");
-        } else {
-          alert("❌ Permissão negada. Verifique as configurações do navegador.");
-        }
-      } catch (error) {
-        console.error("Erro ao obter token:", error);
-        alert("⚠️ Erro ao ativar notificações.");
-      }
-    });
+      beamsClient.start()
+        .then(() => {
+          log("Cliente registrado com sucesso.");
+          return beamsClient.addDeviceInterest("hello");
+        })
+        .then(() => log("Inscrito no canal: hello ✅"))
+        .catch(error => log("Erro: " + error.message));
+    }
 
-    onMessage(messaging, (payload) => {
-      alert(`📩 Nova notificação:\n${payload.notification.title}\n${payload.notification.body}`);
-    });
-
+    // Registra manualmente o service worker, se necessário
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then(reg => console.log("✅ Service Worker registrado com sucesso!"))
-        .catch(err => console.error("❌ Falha ao registrar SW:", err));
+      navigator.serviceWorker.register('/pusher-sw.js')
+        .then(reg => log("Service Worker registrado com sucesso."))
+        .catch(err => log("Erro ao registrar SW: " + err));
     }
   </script>
 </body>
