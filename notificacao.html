@@ -2,46 +2,87 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Notificações Push - OneSignal</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- OneSignal SDK -->
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
-  <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "4ef43844-e63d-4b0b-9cf5-c17998d64044", // seu appId
-        safari_web_id: "web.onesignal.auto.257d0569-0e14-4d06-8d17-3d55d768ff68",
-        notifyButton: {
-          enable: true, // Ativa o botão flutuante
-        },
-      });
-    });
-  </script>
-
+  <title>🔔 Ativar Notificações | ITV</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 30px;
       background: #111;
-      color: white;
+      color: #fff;
       text-align: center;
+      padding: 50px;
     }
-
-    h1 {
-      font-size: 26px;
-      margin-bottom: 20px;
+    button {
+      padding: 20px 40px;
+      font-size: 20px;
+      background: #e50914;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
     }
-
-    p {
-      color: #aaa;
+    button:hover {
+      background: #f40612;
+    }
+    pre {
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      color: #0f0;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
     }
   </style>
 </head>
 <body>
-  <h1>🔔 Notificações Push</h1>
-  <p>Permita as notificações no navegador para receber avisos sobre novos filmes e séries!</p>
+  <h1>📢 Ative as notificações do ITV</h1>
+  <button id="ativar">✅ Ativar Notificações</button>
+  <pre id="tokenOutput">Clique no botão para gerar o token...</pre>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+
+    document.getElementById('ativar').addEventListener('click', async () => {
+      try {
+        const token = await getToken(messaging, {
+          vapidKey: "BC5a1793nNeYjHNryG74NnlwNTMyKKWRN4q5MNlnbUpZyOElQqziKR073hFTCE3MOJKem6a13d15iD9dagd1g5k"
+        });
+        if (token) {
+          document.getElementById("tokenOutput").textContent = token;
+          alert("🔔 Notificações ativadas com sucesso!");
+        } else {
+          alert("❌ Permissão negada. Verifique as configurações do navegador.");
+        }
+      } catch (error) {
+        console.error("Erro ao obter token:", error);
+        alert("⚠️ Erro ao ativar notificações.");
+      }
+    });
+
+    onMessage(messaging, (payload) => {
+      alert(`📩 Nova notificação:\n${payload.notification.title}\n${payload.notification.body}`);
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(reg => console.log("✅ Service Worker registrado com sucesso!"))
+        .catch(err => console.error("❌ Falha ao registrar SW:", err));
+    }
+  </script>
 </body>
 </html>
