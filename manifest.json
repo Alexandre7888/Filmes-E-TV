@@ -1,7 +1,7 @@
 {
   "name": "iTV - Filmes e Séries",
   "short_name": "iTV",
-  "start_url": "ver.html?token=PUBLICO",
+  "start_url": "ver.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#e50914",
