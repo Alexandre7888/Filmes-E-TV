@@ -3,256 +3,138 @@ import { db } from "https://alexandre7888.github.io/Filmes-E-TV/firebaseConfig.j
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 window.token = window.token || "";
-let catalogoGlobal = [];
-let generosSelecionados = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  aplicarCSS();
-  criarBarraDeBusca();
-  catalogoGlobal = await carregarCatalogoComDados();
-  gerarBotoesDeGenero(catalogoGlobal);
-  exibirCatalogoFiltrado("");
-});
+  aplicarEstilos();
 
-function aplicarCSS() {
-  const style = document.createElement("style");
-  style.textContent = `
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
-      color: #333;
-      margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-      color: #2c3e50;
-    }
-    .topo {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    input[type="text"] {
-      padding: 12px;
-      width: 300px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    .filtros {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .filtros button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 6px;
-      background-color: #ddd;
-      cursor: pointer;
-    }
-    .filtros button.selecionado {
-      background-color: #4CAF50;
-      color: white;
-    }
-    .secao {
-      margin-bottom: 40px;
-    }
-    .secao h2 {
-      color: #2c3e50;
-      margin-bottom: 20px;
-    }
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 15px;
-      margin-bottom: 20px;
-    }
-    .card:hover {
-      transform: scale(1.01);
-    }
-    .card img {
-      max-width: 100%;
-      max-height: 300px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-    .card h3 {
-      margin-top: 0;
-      color: #34495e;
-    }
-    .card p {
-      margin: 5px 0;
-    }
-    .card button {
-      margin-top: 10px;
-      padding: 10px 15px;
-      font-size: 15px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .card button:hover {
-      background-color: #45a049;
-    }
-  `;
-  document.head.appendChild(style);
-}
+  const input = document.createElement("input");
+  input.placeholder = "🔍 Buscar por título";
+  input.style = "padding: 12px; width: 90%; max-width: 400px; margin: 20px auto; display: block; font-size: 16px; border-radius: 8px; border: 1px solid #ccc;";
+  document.body.appendChild(input);
 
-function criarBarraDeBusca() {
-  const h1 = document.createElement("h1");
-  h1.textContent = "🎞️ Catálogo de Filmes, Séries e TV";
-  document.body.appendChild(h1);
+  const container = document.createElement("div");
+  container.style = "padding: 10px;";
+  document.body.appendChild(container);
 
-  const topo = document.createElement("div");
-  topo.className = "topo";
+  const catalogo = await carregarCatalogo();
+  let filtrado = catalogo;
 
-  const campoTitulo = document.createElement("input");
-  campoTitulo.type = "text";
-  campoTitulo.placeholder = "🔍 Pesquisar por título";
-  campoTitulo.addEventListener("input", () => {
-    exibirCatalogoFiltrado(campoTitulo.value.toLowerCase());
+  input.addEventListener("input", () => {
+    const termo = input.value.toLowerCase();
+    filtrado = catalogo.filter(item =>
+      (item.titulo || "").toLowerCase().includes(termo)
+    );
+    renderizar(filtrado, container);
   });
 
-  const filtros = document.createElement("div");
-  filtros.id = "filtros";
-  filtros.className = "filtros";
+  renderizar(filtrado, container);
+});
 
-  topo.appendChild(campoTitulo);
-  topo.appendChild(filtros);
-  document.body.appendChild(topo);
-
-  const catalogo = document.createElement("div");
-  catalogo.id = "catalogo";
-  document.body.appendChild(catalogo);
+function aplicarEstilos() {
+  const estilo = document.createElement("style");
+  estilo.textContent = `
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      color: #222;
+      margin: 0;
+      padding: 0;
+    }
+    h2 {
+      margin-top: 40px;
+      text-align: center;
+      color: #444;
+    }
+    h3 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      max-width: 800px;
+    }
+  `;
+  document.head.appendChild(estilo);
 }
 
-async function carregarCatalogoComDados() {
-  const token = window.token;
-  const catalogo = [];
+async function carregarCatalogo() {
+  const dados = [];
+  const tipos = ["filmes", "series", "tv"];
 
-  for (const tipo of ["filmes", "series", "tv"]) {
+  for (const tipo of tipos) {
     const snap = await get(ref(db, tipo));
     if (snap.exists()) {
-      Object.values(snap.val()).forEach(item => catalogo.push({ ...item, tipo }));
+      Object.values(snap.val()).forEach(item => dados.push({ ...item, tipo }));
     }
   }
 
-  if (token) {
-    const snap = await get(ref(db, "conteudos/" + token));
+  if (window.token) {
+    const snap = await get(ref(db, "conteudos/" + window.token));
     if (snap.exists()) {
-      const dados = snap.val();
-      for (const tipo of ["filmes", "series", "tv"]) {
-        if (dados[tipo]) {
-          Object.values(dados[tipo]).forEach(item => catalogo.push({ ...item, tipo }));
+      const dadosPrivados = snap.val();
+      for (const tipo of tipos) {
+        if (dadosPrivados[tipo]) {
+          Object.values(dadosPrivados[tipo]).forEach(item =>
+            dados.push({ ...item, tipo })
+          );
         }
       }
     }
   }
 
-  return catalogo;
+  return dados;
 }
 
-function gerarBotoesDeGenero(catalogo) {
-  const filtrosDiv = document.getElementById("filtros");
-  const todosGeneros = new Set();
-
-  catalogo.forEach(item => {
-    if (item.genero) {
-      item.genero.split(" ").map(g => g.trim()).forEach(g => todosGeneros.add(g));
-    }
-  });
-
-  [...todosGeneros].sort().forEach(genero => {
-    const botao = document.createElement("button");
-    botao.textContent = genero;
-    botao.addEventListener("click", () => {
-      if (generosSelecionados.includes(genero)) {
-        generosSelecionados = generosSelecionados.filter(g => g !== genero);
-        botao.classList.remove("selecionado");
-      } else {
-        generosSelecionados.push(genero);
-        botao.classList.add("selecionado");
-      }
-      const campo = document.querySelector("input[type='text']");
-      exibirCatalogoFiltrado(campo.value.toLowerCase());
-    });
-    filtrosDiv.appendChild(botao);
-  });
-}
-
-function exibirCatalogoFiltrado(filtroTitulo) {
-  const container = document.getElementById("catalogo");
+function renderizar(itens, container) {
   container.innerHTML = "";
 
   const categorias = {
-    filmes: { titulo: "🎬 Filmes", lista: [] },
-    series: { titulo: "📺 Séries", lista: [] },
-    tv: { titulo: "📡 TV", lista: [] },
+    filmes: [],
+    series: [],
+    tv: []
   };
 
-  catalogoGlobal.forEach(item => {
-    const titulo = item.titulo?.toLowerCase() || "";
-    const generosItem = item.genero ? item.genero.split(" ").map(g => g.toLowerCase()) : [];
-
-    const correspondeTitulo = titulo.includes(filtroTitulo);
-    const correspondeGenero =
-      generosSelecionados.length === 0 ||
-      generosSelecionados.every(g => generosItem.includes(g));
-
-    if (correspondeTitulo && correspondeGenero && categorias[item.tipo]) {
-      categorias[item.tipo].lista.push(item);
+  itens.forEach(item => {
+    if (categorias[item.tipo]) {
+      categorias[item.tipo].push(item);
     }
   });
 
-  Object.keys(categorias).forEach(tipo => {
-    const { titulo, lista } = categorias[tipo];
-    if (lista.length > 0) {
-      const secao = document.createElement("div");
-      secao.className = "secao";
-      secao.innerHTML = `<h2>${titulo}</h2>`;
+  for (const tipo in categorias) {
+    if (categorias[tipo].length === 0) continue;
 
-      lista.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
+    const titulo = document.createElement("h2");
+    titulo.textContent = tipo === "filmes" ? "🎬 Filmes"
+                     : tipo === "series" ? "📺 Séries"
+                     : "📡 TV Ao Vivo";
+    container.appendChild(titulo);
 
-        let html = "";
+    categorias[tipo].forEach(item => {
+      const card = document.createElement("div");
+      card.className = "card";
 
-        if (item.capa) {
-          html += `<img src="${item.capa}" alt="Capa">`;
-        }
+      const nome = document.createElement("h3");
+      nome.textContent = item.titulo || "Sem título";
+      card.appendChild(nome);
 
-        html += `<h3>${item.titulo || "Sem título"}</h3>`;
+      if (item.link) {
+        const iframe = document.createElement("iframe");
+        iframe.src = item.link;
+        iframe.width = "100%";
+        iframe.height = "400";
+        iframe.allowFullscreen = true;
+        iframe.frameBorder = "0";
+        card.appendChild(iframe);
+      }
 
-        if (item.genero) {
-          const generos = item.genero.split(" ").filter(Boolean);
-          html += `<p><strong>Gêneros:</strong><br>${generos.map(g => `• ${g}`).join("<br>")}</p>`;
-        }
-
-        if (item.autor) {
-          const autores = item.autor.split(",").map(a => a.trim());
-          html += `<p><strong>Autor:</strong><br>${autores.join(", ")}</p>`;
-        }
-
-        if (item.link) {
-          html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
-        }
-
-        card.innerHTML = html;
-        secao.appendChild(card);
-      });
-
-      container.appendChild(secao);
-    }
-  });
+      container.appendChild(card);
+    });
+  }
 
   if (container.innerHTML.trim() === "") {
     container.innerHTML = "<p style='text-align:center;'>⚠️ Nada encontrado.</p>";
