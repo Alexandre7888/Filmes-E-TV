@@ -3,39 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Adicionar Conteúdo</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label, input, select, button { font-size: 16px; margin: 10px 0; display: block; }
-    #mensagem { margin: 10px 0; color: red; }
-    #preview { margin-top: 20px; padding: 10px; background: #f0f0f0; }
-    .btn-preview { background: #4CAF50; color: white; padding: 10px; border: none; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <h2>Adicionar Filme, Série ou TV</h2>
-  <div id="mensagem"></div>
-  <form id="conteudoForm">
-    <label for="titulo">Título:</label>
-    <input type="text" id="titulo" required>
-
-    <label for="tipo">Tipo:</label>
-    <select id="tipo">
-      <option value="filmes">Filme</option>
-      <option value="series">Série</option>
-      <option value="tv">TV</option>
-    </select>
-
-    <label for="link">Link do vídeo (qualquer link):</label>
-    <input type="text" id="link" required>
-
-    <button type="submit">Adicionar</button>
-  </form>
-
-  <div id="preview"></div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
@@ -50,41 +20,56 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const form = document.getElementById("conteudoForm");
-    const mensagemEl = document.getElementById("mensagem");
-    const previewEl = document.getElementById("preview");
-
-    form.addEventListener("submit", async (e) => {
+    document.getElementById("form").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const titulo = document.getElementById("titulo").value.trim();
       const tipo = document.getElementById("tipo").value;
-      const link = document.getElementById("link").value.trim();
+      const titulo = document.getElementById("titulo").value.trim();
+      const genero = document.getElementById("genero").value.trim().toLowerCase();
+      const autor = document.getElementById("autor").value.trim();
+      let link = document.getElementById("link").value.trim();
+      const capa = document.getElementById("capa").value.trim();
 
-      if (!titulo || !link) {
-        mensagemEl.textContent = "Preencha todos os campos!";
+      // Corrigir link do Google Drive
+      if (link.includes("drive.google.com") && !link.includes("/preview")) {
+        const match = link.match(/\/d\/(.+?)\//);
+        if (match) {
+          const fileId = match[1];
+          link = `https://drive.google.com/file/d/${fileId}/preview`;
+        }
+      }
+
+      if (!titulo || !link || !tipo) {
+        alert("Preencha todos os campos obrigatórios!");
         return;
       }
 
-      try {
-        const novoRef = push(ref(db, tipo));
-        await set(novoRef, { titulo, link });
-        mensagemEl.style.color = "green";
-        mensagemEl.textContent = "Adicionado com sucesso!";
-        form.reset();
-        mostrarPreview(titulo, link);
-      } catch (error) {
-        mensagemEl.style.color = "red";
-        mensagemEl.textContent = "Erro ao adicionar: " + error.message;
-      }
+      const dados = { titulo, genero, autor, link, capa };
+      await push(ref(db, tipo), dados);
+      alert("✅ Adicionado com sucesso!");
+      e.target.reset();
     });
-
-    function mostrarPreview(titulo, link) {
-      previewEl.innerHTML = `
-        <h3>Preview: ${titulo}</h3>
-        <button class="btn-preview" onclick="window.open('${link}', '_blank')">▶ Abrir Link</button>
-      `;
-    }
   </script>
+</head>
+<body>
+  <h1>📥 Adicionar Filme / Série / TV</h1>
+  <form id="form">
+    <label>Tipo:
+      <select id="tipo" required>
+        <option value="">Selecione</option>
+        <option value="filmes">🎬 Filme</option>
+        <option value="series">📺 Série</option>
+        <option value="tv">📡 TV</option>
+      </select>
+    </label><br><br>
+
+    <label>Título: <input type="text" id="titulo" required></label><br><br>
+    <label>Gênero(s): <input type="text" id="genero" placeholder="ação, comédia"></label><br><br>
+    <label>Autor(es): <input type="text" id="autor" placeholder="opcional"></label><br><br>
+    <label>Link (Drive ou outro): <input type="text" id="link" required></label><br><br>
+    <label>Link da Capa (opcional): <input type="text" id="capa"></label><br><br>
+
+    <button type="submit">✅ Adicionar</button>
+  </form>
 </body>
 </html>
