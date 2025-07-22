@@ -2,22 +2,21 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Ativar Notificações - ITV</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notificações Push - OneSignal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- OneSignal SDK -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
       await OneSignal.init({
-        appId: "6027f689-7d73-4763-9de1-1960fbeb7104", // ✅ seu novo App ID
-        safari_web_id: "web.onesignal.auto.43f3e2d2-3818-43ea-aa50-e469d0e1e106",
+        appId: "4ef43844-e63d-4b0b-9cf5-c17998d64044", // seu appId
+        safari_web_id: "web.onesignal.auto.257d0569-0e14-4d06-8d17-3d55d768ff68",
         notifyButton: {
-          enable: true,
+          enable: true, // Ativa o botão flutuante
         },
-        serviceWorkerPath: "https://alexandre7888.github.io/Filmes-E-TV/OneSignalSDKWorker.js",
-        serviceWorkerUpdaterPath: "https://alexandre7888.github.io/Filmes-E-TV/OneSignalSDKWorker.js"
       });
     });
   </script>
@@ -25,36 +24,24 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 40px;
-      background-color: #f9f9f9;
+      padding: 30px;
+      background: #111;
+      color: white;
       text-align: center;
     }
 
     h1 {
-      color: #333;
+      font-size: 26px;
       margin-bottom: 20px;
     }
 
     p {
-      font-size: 18px;
-      color: #555;
-    }
-
-    .info {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #888;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-
-  <h1>🔔 Ativar Notificações</h1>
-  <p>Clique no botão flutuante no canto inferior para ativar as notificações do ITV.</p>
-
-  <div class="info">
-    Caso não veja o botão, verifique se as notificações não estão bloqueadas pelo navegador.
-  </div>
-
+  <h1>🔔 Notificações Push</h1>
+  <p>Permita as notificações no navegador para receber avisos sobre novos filmes e séries!</p>
 </body>
 </html>
