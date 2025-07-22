@@ -1,6 +1,6 @@
 const CACHE_NAME = "itv-cache-v1";
 const urlsToCache = [
-  "ver.html?token=PUBLICO",
+  "ver.html",
   "manifest.json",
   "https://alexandre7888.github.io/Filmes-E-TV/file_00000000629c61f5ab79dacd3f1866e9.png"
 ];
