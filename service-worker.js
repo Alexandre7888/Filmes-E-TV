@@ -1,3 +1,4 @@
+//pwa
 const CACHE_NAME = "itv-cache-v1";
 const urlsToCache = [
   "ver.html",
@@ -20,3 +21,5 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+// Código do Pusher Beams
+importScripts("https://js.pusher.com/beams/service-worker.js");
