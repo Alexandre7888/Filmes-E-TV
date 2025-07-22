@@ -2,10 +2,41 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Ativar Notificações ITV</title>
+  <title>🔔 Ativar Notificações - ITV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    #botaoAtivar {
+      font-size: 20px;
+      padding: 20px 40px;
+      background-color: #ff3d00;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #botaoAtivar:hover {
+      background-color: #e53900;
+    }
+  </style>
+</head>
+<body>
 
-  <!-- Script do OneSignal -->
+  <h1>Deseja receber notificações da plataforma ITV?</h1>
+  <button id="botaoAtivar">🔔 Ativar Notificações</button>
+
+  <!-- OneSignal -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
     window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -13,61 +44,27 @@
       await OneSignal.init({
         appId: "f07007f5-049e-41ae-b583-6a8299a888f3",
         safari_web_id: "web.onesignal.auto.31f2bfbe-48d0-4a72-b7e0-d44022a2d3bb",
+        serviceWorker: {
+          path: "/Filmes-E-TV/OneSignalSDKWorker.js",
+          scope: "/Filmes-E-TV/",
+          type: "classic"
+        },
         notifyButton: {
-          enable: false, // Desativado para usar botão personalizado
+          enable: true // Isso mostra o botão flutuante
         },
       });
 
-      // Evento do botão personalizado
-      document.getElementById("ativarNotificacoes").addEventListener("click", async () => {
-        const permission = await OneSignal.Notification.permission;
-        if (permission === "granted") {
-          alert("🔔 Você já ativou as notificações!");
+      // Ação manual ao clicar no botão grande
+      const btn = document.getElementById("botaoAtivar");
+      btn.addEventListener("click", async () => {
+        const status = await OneSignal.User.PushSubscription.optIn();
+        if (status) {
+          alert("✅ Notificações ativadas com sucesso!");
         } else {
-          await OneSignal.showSlidedownPrompt(); // Exibe o popup de permissão
+          alert("❌ Não foi possível ativar notificações.");
         }
       });
     });
   </script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f6f9;
-      text-align: center;
-      padding: 40px;
-      color: #2c3e50;
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 20px;
-    }
-
-    p {
-      font-size: 18px;
-      margin-bottom: 40px;
-    }
-
-    #ativarNotificacoes {
-      padding: 20px 40px;
-      font-size: 24px;
-      background-color: #ff4444;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    #ativarNotificacoes:hover {
-      background-color: #e03333;
-    }
-  </style>
-</head>
-<body>
-  <h1>🔔 Ativar Notificações da ITV</h1>
-  <p>Receba alertas de novos filmes, séries e canais ao vivo diretamente no seu navegador.</p>
-  <button id="ativarNotificacoes">🚀 Ativar Notificações Agora</button>
 </body>
 </html>
