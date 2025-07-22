@@ -1,7 +1,7 @@
 //pwa
 const CACHE_NAME = "itv-cache-v1";
 const urlsToCache = [
-  "ver.html",
+  "app.html",
   "manifest.json",
   "https://alexandre7888.github.io/Filmes-E-TV/file_00000000629c61f5ab79dacd3f1866e9.png"
 ];
@@ -21,5 +21,3 @@ self.addEventListener("fetch", event => {
     })
   );
 });
-// Código do Pusher Beams
-importScripts("https://js.pusher.com/beams/service-worker.js");
