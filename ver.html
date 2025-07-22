@@ -2,17 +2,58 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Catálogo Público</title>
+  <title>Catálogo iTV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    .card { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
-    h2 { margin-top: 40px; }
-    button { padding: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 20px;
+      margin: 0;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #e50914;
+    }
+    .card {
+      background: #222;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 15px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .card img {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .card h3 {
+      margin: 0 0 10px;
+    }
+    .card p {
+      margin: 4px 0;
+    }
+    button {
+      background: #e50914;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #f40612;
+    }
   </style>
 </head>
 <body>
-  <h1>🎞️ Catálogo de Filmes, Séries e TV</h1>
-  <div id="conteudo"><p>Carregando...</p></div>
+  <h1>🎞️ Catálogo iTV</h1>
+  <div id="conteudo"><p>Carregando catálogo...</p></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -31,53 +72,74 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const token = new URLSearchParams(window.location.search).get("token");
+    const token = new URLSearchParams(location.search).get("token") || "PUBLICO";
     const conteudo = document.getElementById("conteudo");
 
-    if (!token) {
-      conteudo.innerHTML = "<h2 style='color:red;'>❌ Token não encontrado na URL.</h2>";
-    } else {
-      const tokenRef = ref(db, "tokens/" + token);
-      get(tokenRef).then(snapshot => {
-        if (snapshot.exists()) {
-          carregarCategoria("filmes", "🎬 Filmes");
-          carregarCategoria("series", "📺 Séries");
-          carregarCategoria("tv", "📡 TV Ao Vivo");
-        } else {
-          conteudo.innerHTML = "<h2 style='color:red;'>❌ Token inválido. Acesso negado.</h2>";
-        }
-      }).catch(error => {
-        conteudo.innerHTML = `<h2 style='color:red;'>Erro ao verificar token: ${error}</h2>`;
-      });
+    async function verificarToken() {
+      const snap = await get(ref(db, "tokens/" + token));
+      return snap.exists();
     }
 
-    function carregarCategoria(caminho, titulo) {
-      const refCat = ref(db, caminho);
-      get(refCat).then(snapshot => {
-        if (snapshot.exists()) {
-          const dados = snapshot.val();
-          const secao = document.createElement("div");
-          secao.innerHTML = `<h2>${titulo}</h2>`;
-          for (let id in dados) {
-            const item = dados[id];
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-              <h3>${item.titulo}</h3>
-              <a href="${item.link}" target="_blank" rel="noopener noreferrer">
-                <button>▶ Assistir</button>
-              </a>
-            `;
-            secao.appendChild(card);
+    async function carregarCategoria(path, titulo) {
+      const snap = await get(ref(db, path));
+      if (snap.exists()) {
+        const dados = snap.val();
+        const secao = document.createElement("div");
+        secao.innerHTML = `<h2>${titulo}</h2>`;
+        for (let id in dados) {
+          const item = dados[id];
+          const card = document.createElement("div");
+          card.className = "card";
+          let html = "";
+
+          if (item.capa) {
+            html += `<img src="${item.capa}" alt="Capa">`;
           }
-          conteudo.appendChild(secao);
-        } else {
-          const aviso = document.createElement("p");
-          aviso.style.color = "orange";
-          aviso.textContent = `⚠️ Nenhum conteúdo encontrado em: ${titulo}`;
-          conteudo.appendChild(aviso);
+
+          html += `<h3>${item.titulo || "Sem título"}</h3>`;
+
+          if (item.genero) {
+            const generos = item.genero.split(",").map(g => `• ${g.trim()}`).join("<br>");
+            html += `<p><strong>Gêneros:</strong><br>${generos}</p>`;
+          }
+
+          if (item.autor) {
+            const autores = item.autor.split(",").map(a => a.trim()).join(", ");
+            html += `<p><strong>Autor:</strong> ${autores}</p>`;
+          }
+
+          html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
+          card.innerHTML = html;
+          secao.appendChild(card);
         }
-      });
+        conteudo.appendChild(secao);
+      } else {
+        const aviso = document.createElement("p");
+        aviso.style.color = "orange";
+        aviso.textContent = `⚠️ Nenhum conteúdo encontrado para: ${titulo}`;
+        conteudo.appendChild(aviso);
+      }
+    }
+
+    async function iniciar() {
+      conteudo.innerHTML = "";
+      const tokenValido = await verificarToken();
+      if (!tokenValido) {
+        conteudo.innerHTML = `<h2 style="color:red;">❌ Token inválido.</h2>`;
+        return;
+      }
+
+      await carregarCategoria("filmes", "🎬 Filmes");
+      await carregarCategoria("series", "📺 Séries");
+      await carregarCategoria("tv", "📡 TV Ao Vivo");
+    }
+
+    iniciar();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
     }
   </script>
 </body>
