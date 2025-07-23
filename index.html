@@ -15,7 +15,7 @@
     .card img { width: 100%; max-width: 300px; border-radius: 8px; }
     .card h3 { margin: 10px 0 5px; }
     .card p { margin: 4px 0; }
-    button {
+    .btn {
       padding: 10px 20px;
       font-size: 15px;
       background: #e50914;
@@ -25,7 +25,21 @@
       cursor: pointer;
       margin-top: 10px;
     }
-    button:hover { background: #c20810; }
+    .btn:hover { background: #c20810; }
+    .fullscreen-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #000;
+      opacity: 0.8;
+      padding: 5px 10px;
+      font-size: 12px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      z-index: 2;
+    }
   </style>
 </head>
 <body>
@@ -94,7 +108,7 @@
           const secao = document.createElement("div");
           secao.innerHTML = `<h2>${titulo}</h2>`;
 
-          categorias[tipo].forEach(item => {
+          categorias[tipo].forEach((item, index) => {
             const card = document.createElement("div");
             card.className = "card";
 
@@ -115,10 +129,16 @@
             }
 
             if (item.link) {
-              if (tipo === "series") {
-                html += `<a href="${item.link}" target="_blank"><button>▶ Assistir Série</button></a>`;
-              } else {
+              if (tipo === "filmes") {
                 html += `<iframe src="${item.link}" allowfullscreen></iframe>`;
+              } else if (tipo === "series") {
+                html += `<a href="${item.link}" target="_blank"><button class="btn">▶ Assistir Série</button></a>`;
+              } else if (tipo === "tv") {
+                const idIframe = `iframe_tv_${index}`;
+                html += `
+                  <iframe id="${idIframe}" src="${item.link}" allowfullscreen></iframe>
+                  <button class="fullscreen-btn" onclick="fullscreenIframe('${idIframe}')">⛶ Tela Cheia</button>
+                `;
               }
             }
 
@@ -160,6 +180,21 @@
   </script>
 
   <script>
+    function fullscreenIframe(id) {
+      const iframe = document.getElementById(id);
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.webkitRequestFullscreen) {
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.mozRequestFullScreen) {
+        iframe.mozRequestFullScreen();
+      } else if (iframe.msRequestFullscreen) {
+        iframe.msRequestFullscreen();
+      } else {
+        alert("Seu navegador não suporta tela cheia.");
+      }
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
         .then(reg => console.log('✔️ Service Worker registrado:', reg.scope))
