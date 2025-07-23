@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Exemplo de Feed</title>
+    <link>https://exemplo.com</link>
+    <description>Últimas atualizações</description>
+    <item>
+      <title>🎬 Novo Filme no Catálogo!</title>
+      <link>https://exemplo.com/filme123</link>
+    </item>
+  </channel>
+</rss>
