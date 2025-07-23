@@ -15,23 +15,17 @@
     .card img { width: 100%; max-width: 300px; border-radius: 8px; }
     .card h3 { margin: 10px 0 5px; }
     .card p { margin: 4px 0; }
-    .fullscreen-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background-color: #222;
-      color: #fff;
-      padding: 6px 12px;
+    button {
+      padding: 10px 20px;
+      font-size: 15px;
+      background: #e50914;
       border: none;
-      border-radius: 6px;
-      font-size: 13px;
+      color: #fff;
+      border-radius: 5px;
       cursor: pointer;
-      opacity: 0.8;
-      z-index: 2;
+      margin-top: 10px;
     }
-    .fullscreen-btn:hover {
-      opacity: 1;
-    }
+    button:hover { background: #c20810; }
   </style>
 </head>
 <body>
@@ -100,13 +94,13 @@
           const secao = document.createElement("div");
           secao.innerHTML = `<h2>${titulo}</h2>`;
 
-          categorias[tipo].forEach((item, index) => {
+          categorias[tipo].forEach(item => {
             const card = document.createElement("div");
             card.className = "card";
 
             let html = "";
 
-            if (item.capa && tipo !== "filmes") {
+            if (item.capa) {
               html += `<img src="${item.capa}" alt="Capa">`;
             }
 
@@ -115,16 +109,17 @@
             if (item.genero) {
               html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
             }
+
             if (item.autor) {
               html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
             }
 
             if (item.link) {
-              const iframeId = `iframe${tipo}${index}`;
-              if (tipo === "tv") {
-                html += `<button class="fullscreen-btn" onclick="entrarTelaCheia('${iframeId}')">⛶ Tela Cheia</button>`;
+              if (tipo === "series") {
+                html += `<a href="${item.link}" target="_blank"><button>▶ Assistir Série</button></a>`;
+              } else {
+                html += `<iframe src="${item.link}" allowfullscreen></iframe>`;
               }
-              html += `<iframe id="${iframeId}" src="${item.link}" allowfullscreen></iframe>`;
             }
 
             card.innerHTML = html;
@@ -162,22 +157,6 @@
     }
 
     iniciar();
-
-    // Função global para botão de tela cheia
-    window.entrarTelaCheia = (id) => {
-      const iframe = document.getElementById(id);
-      if (iframe.requestFullscreen) {
-        iframe.requestFullscreen();
-      } else if (iframe.webkitRequestFullscreen) {
-        iframe.webkitRequestFullscreen();
-      } else if (iframe.mozRequestFullScreen) {
-        iframe.mozRequestFullScreen();
-      } else if (iframe.msRequestFullscreen) {
-        iframe.msRequestFullscreen();
-      } else {
-        alert("Seu navegador não suporta fullscreen.");
-      }
-    };
   </script>
 
   <script>
