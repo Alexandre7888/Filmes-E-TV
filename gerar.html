@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerar Token</title>
+</head>
+<body>
+  <h2>Gerador de Token</h2>
+  <button onclick="gerarToken()">Gerar Token</button>
+  <p id="token"></p>
+
+  <!-- Firebase via módulos ES6 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
+      authDomain: "api7-5cde7.firebaseapp.com",
+      databaseURL: "https://api7-5cde7-default-rtdb.firebaseio.com",
+      projectId: "api7-5cde7",
+      storageBucket: "api7-5cde7.appspot.com",
+      messagingSenderId: "113015470459",
+      appId: "1:113015470459:web:3ffd77031fb936d001a5de"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.gerarToken = function () {
+      const token = Math.random().toString(36).substring(2, 12);
+      set(ref(db, 'tokens/' + token), true)
+        .then(() => {
+          document.getElementById("token").innerText = "Token gerado: " + token;
+        })
+        .catch((error) => {
+          document.getElementById("token").innerText = "Erro: " + error.message;
+        });
+    };
+  </script>
+</body>
+</html>
