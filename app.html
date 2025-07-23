@@ -10,13 +10,28 @@
     body { font-family: sans-serif; background: #111; color: #fff; margin: 0; padding: 20px; }
     h1, h2 { text-align: center; color: #e50914; }
     #busca { display: block; margin: 20px auto; padding: 10px; width: 90%; max-width: 500px; border-radius: 5px; font-size: 16px; }
-    .card { background: #222; margin: 10px 0; padding: 15px; border-radius: 8px; }
+    .card { background: #222; margin: 10px 0; padding: 15px; border-radius: 8px; position: relative; }
     .card iframe { width: 100%; height: 300px; border: none; border-radius: 8px; margin-top: 10px; }
     .card img { width: 100%; max-width: 300px; border-radius: 8px; }
     .card h3 { margin: 10px 0 5px; }
     .card p { margin: 4px 0; }
-    button { padding: 10px 20px; font-size: 15px; background: #e50914; border: none; color: #fff; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #c20810; }
+    .fullscreen-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #222;
+      color: #fff;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      opacity: 0.8;
+      z-index: 2;
+    }
+    .fullscreen-btn:hover {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -81,11 +96,11 @@
 
       for (const tipo in categorias) {
         if (categorias[tipo].length > 0) {
-          const titulo = tipo === "filmes" ? "🎬 Filmes" : tipo === "series" ? "📺 Séries" : "📡 TV";
+          const titulo = tipo === "filmes" ? "🎬 Filmes" : tipo === "series" ? "📺 Séries" : "📡 TV Ao Vivo";
           const secao = document.createElement("div");
           secao.innerHTML = `<h2>${titulo}</h2>`;
 
-          categorias[tipo].forEach(item => {
+          categorias[tipo].forEach((item, index) => {
             const card = document.createElement("div");
             card.className = "card";
 
@@ -105,11 +120,11 @@
             }
 
             if (item.link) {
-              if (tipo === "filmes") {
-                html += `<iframe src="${item.link}" allowfullscreen></iframe>`;
-              } else {
-                html += `<a href="${item.link}" target="_blank"><button>▶ Assistir</button></a>`;
+              const iframeId = `iframe${tipo}${index}`;
+              if (tipo === "tv") {
+                html += `<button class="fullscreen-btn" onclick="entrarTelaCheia('${iframeId}')">⛶ Tela Cheia</button>`;
               }
+              html += `<iframe id="${iframeId}" src="${item.link}" allowfullscreen></iframe>`;
             }
 
             card.innerHTML = html;
@@ -147,6 +162,22 @@
     }
 
     iniciar();
+
+    // Função global para botão de tela cheia
+    window.entrarTelaCheia = (id) => {
+      const iframe = document.getElementById(id);
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.webkitRequestFullscreen) {
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.mozRequestFullScreen) {
+        iframe.mozRequestFullScreen();
+      } else if (iframe.msRequestFullscreen) {
+        iframe.msRequestFullscreen();
+      } else {
+        alert("Seu navegador não suporta fullscreen.");
+      }
+    };
   </script>
 
   <script>
