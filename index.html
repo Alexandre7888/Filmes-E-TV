@@ -1,18 +1,47 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Gerar Token</title>
+  <meta charset="UTF-8" />
+  <title>🎞️ Catálogo iTV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; margin: 0; padding: 20px; }
+    h1, h2 { text-align: center; color: #e50914; }
+    #busca { display: block; margin: 20px auto; padding: 10px; width: 90%; max-width: 500px; border-radius: 5px; font-size: 16px; }
+    .card { background: #222; margin: 10px 0; padding: 15px; border-radius: 8px; position: relative; }
+    .card iframe { width: 100%; height: 300px; border: none; border-radius: 8px; margin-top: 10px; }
+    .card img { width: 100%; max-width: 300px; border-radius: 8px; }
+    .card h3 { margin: 10px 0 5px; }
+    .card p { margin: 4px 0; }
+    .fullscreen-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #222;
+      color: #fff;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      opacity: 0.8;
+      z-index: 2;
+    }
+    .fullscreen-btn:hover {
+      opacity: 1;
+    }
+  </style>
 </head>
 <body>
-  <h2>Gerador de Token</h2>
-  <button onclick="gerarToken()">Gerar Token</button>
-  <p id="token"></p>
+  <h1>🎞️ Catálogo iTV</h1>
+  <input id="busca" type="text" placeholder="🔍 Pesquisar por título, autor ou gênero..." />
+  <div id="conteudo"><p>Carregando...</p></div>
 
-  <!-- Firebase via módulos ES6 -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC4THzGt-8NwPDmWuaqR4OTJR_6XbfbSvM",
@@ -27,16 +56,136 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    window.gerarToken = function () {
-      const token = Math.random().toString(36).substring(2, 12);
-      set(ref(db, 'tokens/' + token), true)
-        .then(() => {
-          document.getElementById("token").innerText = "Token gerado: " + token;
-        })
-        .catch((error) => {
-          document.getElementById("token").innerText = "Erro: " + error.message;
-        });
+    const token = new URLSearchParams(location.search).get("token") || "PUBLICO";
+    const conteudo = document.getElementById("conteudo");
+    const campoBusca = document.getElementById("busca");
+
+    let todosItens = [];
+
+    async function verificarToken() {
+      const snap = await get(ref(db, "tokens/" + token));
+      return snap.exists();
+    }
+
+    async function carregarCategoria(path, tipo) {
+      const snap = await get(ref(db, path));
+      if (snap.exists()) {
+        const dados = snap.val();
+        for (let id in dados) {
+          todosItens.push({ ...dados[id], tipo });
+        }
+      }
+    }
+
+    function exibirResultados(itens) {
+      conteudo.innerHTML = "";
+      if (itens.length === 0) {
+        conteudo.innerHTML = "<p style='text-align:center;'>⚠️ Nenhum conteúdo encontrado.</p>";
+        return;
+      }
+
+      const categorias = {
+        filmes: [],
+        series: [],
+        tv: [],
+      };
+
+      itens.forEach(item => {
+        if (categorias[item.tipo]) categorias[item.tipo].push(item);
+      });
+
+      for (const tipo in categorias) {
+        if (categorias[tipo].length > 0) {
+          const titulo = tipo === "filmes" ? "🎬 Filmes" : tipo === "series" ? "📺 Séries" : "📡 TV Ao Vivo";
+          const secao = document.createElement("div");
+          secao.innerHTML = `<h2>${titulo}</h2>`;
+
+          categorias[tipo].forEach((item, index) => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            let html = "";
+
+            if (item.capa && tipo !== "filmes") {
+              html += `<img src="${item.capa}" alt="Capa">`;
+            }
+
+            html += `<h3>${item.titulo || "Sem título"}</h3>`;
+
+            if (item.genero) {
+              html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
+            }
+            if (item.autor) {
+              html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
+            }
+
+            if (item.link) {
+              const iframeId = `iframe${tipo}${index}`;
+              if (tipo === "tv") {
+                html += `<button class="fullscreen-btn" onclick="entrarTelaCheia('${iframeId}')">⛶ Tela Cheia</button>`;
+              }
+              html += `<iframe id="${iframeId}" src="${item.link}" allowfullscreen></iframe>`;
+            }
+
+            card.innerHTML = html;
+            secao.appendChild(card);
+          });
+
+          conteudo.appendChild(secao);
+        }
+      }
+    }
+
+    campoBusca.addEventListener("input", () => {
+      const termo = campoBusca.value.toLowerCase();
+      const filtrados = todosItens.filter(item =>
+        (item.titulo || "").toLowerCase().includes(termo) ||
+        (item.genero || "").toLowerCase().includes(termo) ||
+        (item.autor || "").toLowerCase().includes(termo)
+      );
+      exibirResultados(filtrados);
+    });
+
+    async function iniciar() {
+      conteudo.innerHTML = "<p>Verificando token...</p>";
+      const valido = await verificarToken();
+      if (!valido) {
+        conteudo.innerHTML = "<p style='color:red;'>❌ Token inválido.</p>";
+        return;
+      }
+
+      await carregarCategoria("filmes", "filmes");
+      await carregarCategoria("series", "series");
+      await carregarCategoria("tv", "tv");
+
+      exibirResultados(todosItens);
+    }
+
+    iniciar();
+
+    // Função global para botão de tela cheia
+    window.entrarTelaCheia = (id) => {
+      const iframe = document.getElementById(id);
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.webkitRequestFullscreen) {
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.mozRequestFullScreen) {
+        iframe.mozRequestFullScreen();
+      } else if (iframe.msRequestFullscreen) {
+        iframe.msRequestFullscreen();
+      } else {
+        alert("Seu navegador não suporta fullscreen.");
+      }
     };
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('✔️ Service Worker registrado:', reg.scope))
+        .catch(err => console.error('❌ Erro ao registrar SW:', err));
+    }
   </script>
 </body>
 </html>
