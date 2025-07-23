@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="manifest.json" />
+  <title>🎞️ Catálogo iTV</title>
+  <style>
+    body { background: #111; color: #fff; font-family: sans-serif; padding: 20px; margin: 0; }
+    h1 { text-align: center; color: #e50914; }
+  </style>
+</head>
+<body>
+  <h1>🎬 Catálogo iTV</h1>
+  <p>Se houver uma nova notificação RSS, você será alertado automaticamente.</p>
+
+  <script>
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('✔️ SW registrado:', reg.scope))
+        .catch(err => console.error('❌ Erro no SW:', err));
+    }
+  </script>
+
+  <script>
+    const RSS_URL = "https://alexandre7888.github.io/Filmes-E-TV/rss.xml";
+    let ultimaNotificacao = "";
+
+    async function verificarRSS() {
+      try {
+        const res = await fetch(RSS_URL);
+        const texto = await res.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(texto, "text/xml");
+        const item = xml.querySelector("item");
+        const titulo = item.querySelector("title")?.textContent;
+        const descricao = item.querySelector("description")?.textContent;
+
+        if (titulo && titulo !== ultimaNotificacao) {
+          ultimaNotificacao = titulo;
+          mostrarNotificacao(titulo, descricao);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar RSS:", err);
+      }
+    }
+
+    function mostrarNotificacao(titulo, corpo) {
+      if (Notification.permission === "granted") {
+        new Notification(titulo, { body: corpo });
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(p => {
+          if (p === "granted") {
+            new Notification(titulo, { body: corpo });
+          }
+        });
+      }
+    }
+
+    setInterval(verificarRSS, 60000); // verifica a cada 1 min
+    verificarRSS(); // inicial
+  </script>
+</body>
+</html>
