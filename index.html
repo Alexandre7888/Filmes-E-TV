@@ -18,21 +18,24 @@
       text-align: center;
       color: #e50914;
     }
-    #usuario {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #0f0;
+    .topo {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
     }
-    #loginBtn {
-      display: block;
-      margin: 10px auto;
-      padding: 10px 20px;
+    .topo button {
       background: #e50914;
-      color: #fff;
       border: none;
+      padding: 10px 15px;
+      color: white;
+      font-size: 14px;
       border-radius: 5px;
-      font-size: 16px;
       cursor: pointer;
+    }
+    .topo button:hover {
+      background: #c20810;
     }
     #busca {
       display: block;
@@ -48,6 +51,7 @@
       margin: 10px 0;
       padding: 15px;
       border-radius: 8px;
+      position: relative;
     }
     .card iframe {
       width: 100%;
@@ -81,38 +85,33 @@
       background: #c20810;
     }
     .fullscreen-btn {
-      margin-top: 10px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
       background: #000;
-      color: white;
-      padding: 8px 12px;
+      opacity: 0.8;
+      padding: 5px 10px;
+      font-size: 12px;
       border: none;
       border-radius: 5px;
+      color: white;
       cursor: pointer;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
+
   <h1>🎞️ Catálogo iTV</h1>
-  <div id="usuario">👤 Usuário: <span id="authUser">Desconhecido</span></div>
-  <button id="loginBtn" onclick="window.open('https://www.authpro.com/auth/itv/?action=login', '_blank')">
-    🔐 Login com AuthPro
-  </button>
+
+  <div class="topo">
+    <button onclick="window.open('https://www.authpro.com/auth/itv/?action=reg', '_blank')">📝 Cadastrar</button>
+    <button onclick="window.open('https://www.authpro.com/auth/itv/?action=chat', '_blank')">💬 Chat</button>
+  </div>
+
   <input id="busca" type="text" placeholder="🔍 Pesquisar por título, autor ou gênero..." />
   <div id="conteudo"><p>Carregando...</p></div>
 
-  <!-- Script AuthPro: identifica o usuário logado -->
-  <script src="https://www.authpro.com/auth/itv/?action=pp"></script>
-  <script>
-    window.onload = () => {
-      if (typeof authpro !== "undefined" && authpro.user) {
-        document.getElementById("authUser").textContent = authpro.user;
-      } else {
-        document.getElementById("authUser").textContent = "Não logado";
-      }
-    };
-  </script>
-
-  <!-- Firebase + Catálogo -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -177,6 +176,7 @@
           categorias[tipo].forEach((item, index) => {
             const card = document.createElement("div");
             card.className = "card";
+
             let html = "";
 
             if (item.capa) {
@@ -184,8 +184,14 @@
             }
 
             html += `<h3>${item.titulo || "Sem título"}</h3>`;
-            if (item.genero) html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
-            if (item.autor) html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
+
+            if (item.genero) {
+              html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
+            }
+
+            if (item.autor) {
+              html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
+            }
 
             if (item.link) {
               if (tipo === "filmes") {
@@ -260,5 +266,6 @@
         .catch(err => console.error('❌ Erro ao registrar SW:', err));
     }
   </script>
+
 </body>
 </html>
