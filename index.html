@@ -104,8 +104,8 @@
 
   <h1>🎞️ Catálogo iTV</h1>
 
-  <!-- Botões de Login, Cadastro e Chat -->
-  <div class="topo">
+  <!-- Botões que somem se estiver dentro de um iframe -->
+  <div class="topo" id="botoesLogin">
     <button onclick="window.open('https://www.authpro.com/auth/itv/', '_blank')">🔐 Login</button>
     <button onclick="window.open('https://www.authpro.com/auth/itv/?action=reg', '_blank')">📝 Cadastrar</button>
     <button onclick="window.open('https://www.authpro.com/auth/itv/?action=chat', '_blank')">💬 Chat</button>
@@ -247,6 +247,12 @@
   </script>
 
   <script>
+    // Se estiver dentro de um iframe, esconde os botões de login
+    if (window.self !== window.top) {
+      const botoes = document.getElementById("botoesLogin");
+      if (botoes) botoes.style.display = "none";
+    }
+
     function fullscreenIframe(id) {
       const iframe = document.getElementById(id);
       if (iframe.requestFullscreen) {
