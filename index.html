@@ -7,46 +7,112 @@
   <meta name="theme-color" content="#000000" />
   <link rel="manifest" href="manifest.json" />
   <style>
-    body { font-family: sans-serif; background: #111; color: #fff; margin: 0; padding: 20px; }
-    h1, h2 { text-align: center; color: #e50914; }
-    #busca { display: block; margin: 20px auto; padding: 10px; width: 90%; max-width: 500px; border-radius: 5px; font-size: 16px; }
-    .login { text-align: center; margin-bottom: 20px; }
-    .login button { background: #e50914; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-    .login button:hover { background: #c20810; }
-    .usuario-logado { text-align: center; margin-top: 10px; font-weight: bold; color: #0f0; }
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #e50914;
+    }
+    #usuario {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #0f0;
+    }
+    #loginBtn {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      background: #e50914;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #busca {
+      display: block;
+      margin: 20px auto;
+      padding: 10px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .card {
+      background: #222;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .card iframe {
+      width: 100%;
+      height: 300px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .card img {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 8px;
+    }
+    .card h3 {
+      margin: 10px 0 5px;
+    }
+    .card p {
+      margin: 4px 0;
+    }
+    .btn {
+      padding: 10px 20px;
+      font-size: 15px;
+      background: #e50914;
+      border: none;
+      color: #fff;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:hover {
+      background: #c20810;
+    }
+    .fullscreen-btn {
+      margin-top: 10px;
+      background: #000;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <h1>🎞️ Catálogo iTV</h1>
-
-  <div class="login">
-    <button onclick="window.open('https://www.authpro.com/auth/itv/?action=reg', '_blank')">🔐 Fazer Login</button>
-    <div id="usuario" class="usuario-logado">Verificando login...</div>
-  </div>
-
+  <div id="usuario">👤 Usuário: <span id="authUser">Desconhecido</span></div>
+  <button id="loginBtn" onclick="window.open('https://www.authpro.com/auth/itv/?action=login', '_blank')">
+    🔐 Login com AuthPro
+  </button>
   <input id="busca" type="text" placeholder="🔍 Pesquisar por título, autor ou gênero..." />
-  <div id="conteudo"><p>Carregando conteúdo...</p></div>
+  <div id="conteudo"><p>Carregando...</p></div>
 
-  <!-- Código para obter o nome do usuário via AuthPro API -->
+  <!-- Script AuthPro: identifica o usuário logado -->
+  <script src="https://www.authpro.com/auth/itv/?action=pp"></script>
   <script>
-    async function verificarLogin() {
-      try {
-        const resposta = await fetch("https://www.authpro.com/auth/itv/?action=user&apikey=6j77uuh2o8sdvigk");
-        const texto = await resposta.text();
-        if (texto.includes("USER=")) {
-          const usuario = texto.match(/USER=(.*)/)[1].trim();
-          document.getElementById("usuario").textContent = "👤 Logado como: " + usuario;
-        } else {
-          document.getElementById("usuario").textContent = "❌ Não logado";
-        }
-      } catch (e) {
-        document.getElementById("usuario").textContent = "Erro ao verificar login";
+    window.onload = () => {
+      if (typeof authpro !== "undefined" && authpro.user) {
+        document.getElementById("authUser").textContent = authpro.user;
+      } else {
+        document.getElementById("authUser").textContent = "Não logado";
       }
-    }
-    verificarLogin();
+    };
   </script>
 
-  <!-- Firebase + Catálogo existente -->
+  <!-- Firebase + Catálogo -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -108,10 +174,9 @@
           const secao = document.createElement("div");
           secao.innerHTML = `<h2>${titulo}</h2>`;
 
-          categorias[tipo].forEach(item => {
+          categorias[tipo].forEach((item, index) => {
             const card = document.createElement("div");
             card.className = "card";
-
             let html = "";
 
             if (item.capa) {
@@ -119,14 +184,8 @@
             }
 
             html += `<h3>${item.titulo || "Sem título"}</h3>`;
-
-            if (item.genero) {
-              html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
-            }
-
-            if (item.autor) {
-              html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
-            }
+            if (item.genero) html += `<p><strong>Gênero:</strong> ${item.genero}</p>`;
+            if (item.autor) html += `<p><strong>Autor:</strong> ${item.autor}</p>`;
 
             if (item.link) {
               if (tipo === "filmes") {
@@ -134,10 +193,10 @@
               } else if (tipo === "series") {
                 html += `<a href="${item.link}" target="_blank"><button class="btn">▶ Assistir Série</button></a>`;
               } else if (tipo === "tv") {
-                const iframeId = "tv_" + Math.random().toString(36).substr(2, 9);
+                const idIframe = `iframe_tv_${index}`;
                 html += `
-                  <iframe id="${iframeId}" src="${item.link}" allowfullscreen></iframe>
-                  <button class="fullscreen-btn" onclick="fullscreenIframe('${iframeId}')">⛶ Tela Cheia</button>
+                  <iframe id="${idIframe}" src="${item.link}" allowfullscreen></iframe>
+                  <button class="fullscreen-btn" onclick="fullscreenIframe('${idIframe}')">⛶ Tela Cheia</button>
                 `;
               }
             }
